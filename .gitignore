@@ -1,0 +1,73 @@
+## .NET / Visual Studio
+
+# Build results
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Ww][Ii][Nn]32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+build/
+bld/
+
+# Visual Studio cache/options/temp
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.userprefs
+
+# NuGet
+*.nupkg
+*.snupkg
+**/[Pp]ackages/*
+!**/[Pp]ackages/build/
+*.nuget.props
+*.nuget.targets
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# Rider / ReSharper
+_ReSharper*/
+*.[Rr]e[Ss]harper
+*.DotSettings.user
+
+# Test results / coverage
+[Tt]est[Rr]esult*/
+[Cc]overage*/
+*.trx
+*.coverage
+*.coveragexml
+
+# Publish / deployment
+*.pubxml
+*.publishproj
+PublishScripts/
+publish/
+
+# Entity Framework migrations backups (garder les migrations elles-mêmes !)
+*.edmx.diagram
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Environment / secrets (à NE JAMAIS committer)
+*.env
+appsettings.Development.json
+appsettings.*.local.json
+secrets.json
+
+# GitHub Copilot (local uniquement, pas partagé)
+.github/copilot/
+.github/copilot-instructions.md
+.vscode/

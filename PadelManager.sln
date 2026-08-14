@@ -1,0 +1,60 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.37531.7
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PadelManager.WinForms", "PadelManager.WinForms\PadelManager.WinForms.csproj", "{3DE0667F-D412-46D1-8FA6-77CBC286CC75}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PadelManager.Api", "PadelManager.Api\PadelManager.Api.csproj", "{DB2B4426-45D1-485C-8F0B-915159773EEC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PadelManager.Tests", "PadelManager.Tests\PadelManager.Tests.csproj", "{16ABE689-D1A3-4B32-B9A4-D83E2B8D0A73}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PadelManager.Models", "PadelManager.Models\PadelManager.Models.csproj", "{0ADFE071-7EEF-445C-B688-CE9B1547D38C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PadelManager.Repositories", "PadelManager.Repositories\PadelManager.Repositories.csproj", "{ACF2C4D8-5430-4D89-8BA7-024E5BA52E80}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PadelManager.Services", "PadelManager.Services\PadelManager.Services.csproj", "{271CA9AE-B388-43E0-954B-01E778C80CDB}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Éléments de solution", "Éléments de solution", "{9C8CB701-102D-CF49-A3E0-89AC09D42C2C}"
+	ProjectSection(SolutionItems) = preProject
+		README.md = README.md
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{3DE0667F-D412-46D1-8FA6-77CBC286CC75}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3DE0667F-D412-46D1-8FA6-77CBC286CC75}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3DE0667F-D412-46D1-8FA6-77CBC286CC75}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3DE0667F-D412-46D1-8FA6-77CBC286CC75}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DB2B4426-45D1-485C-8F0B-915159773EEC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DB2B4426-45D1-485C-8F0B-915159773EEC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DB2B4426-45D1-485C-8F0B-915159773EEC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DB2B4426-45D1-485C-8F0B-915159773EEC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{16ABE689-D1A3-4B32-B9A4-D83E2B8D0A73}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{16ABE689-D1A3-4B32-B9A4-D83E2B8D0A73}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{16ABE689-D1A3-4B32-B9A4-D83E2B8D0A73}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{16ABE689-D1A3-4B32-B9A4-D83E2B8D0A73}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0ADFE071-7EEF-445C-B688-CE9B1547D38C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0ADFE071-7EEF-445C-B688-CE9B1547D38C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0ADFE071-7EEF-445C-B688-CE9B1547D38C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0ADFE071-7EEF-445C-B688-CE9B1547D38C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ACF2C4D8-5430-4D89-8BA7-024E5BA52E80}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ACF2C4D8-5430-4D89-8BA7-024E5BA52E80}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ACF2C4D8-5430-4D89-8BA7-024E5BA52E80}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ACF2C4D8-5430-4D89-8BA7-024E5BA52E80}.Release|Any CPU.Build.0 = Release|Any CPU
+		{271CA9AE-B388-43E0-954B-01E778C80CDB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{271CA9AE-B388-43E0-954B-01E778C80CDB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{271CA9AE-B388-43E0-954B-01E778C80CDB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{271CA9AE-B388-43E0-954B-01E778C80CDB}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {70B1E1DA-4D74-437C-8BF4-FC48921E2A4C}
+	EndGlobalSection
+EndGlobal
