@@ -38,7 +38,7 @@ Références entre projets :
 
 ## Prérequis
 
-- [.NET SDK](https://dotnet.microsoft.com/download) (version utilisée par la solution)
+- [.NET SDK](https://dotnet.microsoft.com/download) (version 9.0 utilisée par la solution)
 - [Visual Studio 2022](https://visualstudio.microsoft.com/) (WinForms Designer, débogage) et/ou [VS Code](https://code.visualstudio.com/)
 - [SQL Server](https://www.microsoft.com/sql-server) (LocalDB ou instance complète)
 - Git
@@ -47,7 +47,7 @@ Références entre projets :
 
 1. Cloner le dépôt :
    ```bash
-   git clone https://github.com/<user>/<repo>.git
+   git clone https://github.com/Guillaume-Kennes/SGBD-projet.git
    ```
 2. Ouvrir `PadelManager.sln` dans Visual Studio.
 3. Restaurer les packages NuGet (automatique à l'ouverture, ou `dotnet restore`).
@@ -57,7 +57,7 @@ Références entre projets :
    dotnet run --project PadelManager.Api
    ```
 6. Lancer le client WinForms depuis Visual Studio (définir `PadelManager.WinForms` comme projet de démarrage, F5).
-
+.NET
 ## Tests
 
 ```bash
