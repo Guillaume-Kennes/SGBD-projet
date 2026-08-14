@@ -4,11 +4,13 @@ on: [push, pull_request]
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
         with: { dotnet-version: '9.0.x' }
-      - run: dotnet restore
-      - run: dotnet build --configuration Release --no-restore
-      - run: dotnet test --configuration Release --no-build --verbosity normal
+      - run: dotnet restore PadelManager.Api/PadelManager.Api.csproj
+      - run: dotnet restore PadelManager.Tests/PadelManager.Tests.csproj
+      - run: dotnet build PadelManager.Api/PadelManager.Api.csproj --configuration Release --no-restore
+      - run: dotnet build PadelManager.Tests/PadelManager.Tests.csproj --configuration Release --no-restore
+      - run: dotnet test PadelManager.Tests/PadelManager.Tests.csproj --configuration Release --no-build --verbosity normal
