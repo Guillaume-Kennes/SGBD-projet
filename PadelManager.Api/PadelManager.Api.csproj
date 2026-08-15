@@ -8,11 +8,21 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.19" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.0">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\PadelManager.Interfaces\PadelManager.Interfaces.csproj" />
     <ProjectReference Include="..\PadelManager.Models\PadelManager.Models.csproj" />
+    <ProjectReference Include="..\PadelManager.Repositories\PadelManager.Repositories.csproj" />
     <ProjectReference Include="..\PadelManager.Services\PadelManager.Services.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Controllers\" />
   </ItemGroup>
 
 </Project>
