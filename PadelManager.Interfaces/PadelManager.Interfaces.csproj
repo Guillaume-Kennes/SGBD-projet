@@ -7,7 +7,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\PadelManager.Interfaces\PadelManager.Interfaces.csproj" />
     <ProjectReference Include="..\PadelManager.Models\PadelManager.Models.csproj" />
   </ItemGroup>
 
