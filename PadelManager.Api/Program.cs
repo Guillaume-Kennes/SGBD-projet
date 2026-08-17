@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
-using PadelManager.Repositories;
 using PadelManager.Interfaces;
+using PadelManager.Repositories;
+using PadelManager.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,6 +17,8 @@ builder.Services.AddDbContext<PadelManagerDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("PadelDb")));
 
 builder.Services.AddScoped<IMembreRepository, MembreRepository>();
+builder.Services.AddScoped<IAdministrateurRepository, AdministrateurRepository>();
+builder.Services.AddScoped<IAuthService, AuthService>();
 
 var app = builder.Build();
 
