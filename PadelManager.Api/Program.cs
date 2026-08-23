@@ -20,6 +20,17 @@ builder.Services.AddScoped<IMembreRepository, MembreRepository>();
 builder.Services.AddScoped<IAdministrateurRepository, AdministrateurRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 
+builder.Services.AddScoped<ISiteRepository, SiteRepository>();
+builder.Services.AddScoped<IHoraireSiteRepository, HoraireSiteRepository>();
+builder.Services.AddScoped<IJourFermetureRepository, JourFermetureRepository>();
+builder.Services.AddScoped<IFermetureHebdoGlobaleRepository, FermetureHebdoGlobaleRepository>();
+builder.Services.AddScoped<IDisponibiliteRepository, DisponibiliteRepository>();
+
+builder.Services.AddScoped<ISiteService, SiteService>();
+builder.Services.AddScoped<IDisponibiliteGenerationService, DisponibiliteGenerationService>();
+builder.Services.AddScoped<IHoraireSiteService, HoraireSiteService>();
+builder.Services.AddScoped<IDisponibiliteService, DisponibiliteService>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
