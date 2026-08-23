@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace PadelManager.Models;
+using PadelManager.Models;
 
 public partial class Site
 {
@@ -10,6 +10,8 @@ public partial class Site
     public string Nom { get; set; } = null!;
 
     public virtual ICollection<Administrateur> Administrateurs { get; set; } = new List<Administrateur>();
+
+    public virtual ICollection<Disponibilite> Disponibilites { get; set; } = new List<Disponibilite>();
 
     public virtual ICollection<HoraireSite> HoraireSites { get; set; } = new List<HoraireSite>();
 

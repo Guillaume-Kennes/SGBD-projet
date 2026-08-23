@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace PadelManager.Models;
+using PadelManager.Models;
 
 public partial class Paiement
 {
