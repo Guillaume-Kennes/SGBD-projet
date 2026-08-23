@@ -30,6 +30,8 @@ builder.Services.AddScoped<ISiteService, SiteService>();
 builder.Services.AddScoped<IDisponibiliteGenerationService, DisponibiliteGenerationService>();
 builder.Services.AddScoped<IHoraireSiteService, HoraireSiteService>();
 builder.Services.AddScoped<IDisponibiliteService, DisponibiliteService>();
+builder.Services.AddScoped<IJourFermetureService, JourFermetureService>();
+builder.Services.AddScoped<IFermetureHebdoGlobaleService, FermetureHebdoGlobaleService>();
 
 var app = builder.Build();
 
