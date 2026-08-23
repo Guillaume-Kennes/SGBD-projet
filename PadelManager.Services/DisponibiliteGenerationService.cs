@@ -7,16 +7,19 @@ public class DisponibiliteGenerationService : IDisponibiliteGenerationService {
     private const int DureeMatchMinutes = 90;
     private const int PauseMinutes = 15;
 
+    private readonly ISiteRepository _siteRepository;
     private readonly IHoraireSiteRepository _horaireSiteRepository;
     private readonly IJourFermetureRepository _jourFermetureRepository;
     private readonly IFermetureHebdoGlobaleRepository _fermetureHebdoGlobaleRepository;
     private readonly IDisponibiliteRepository _disponibiliteRepository;
 
     public DisponibiliteGenerationService(
+        ISiteRepository siteRepository,
         IHoraireSiteRepository horaireSiteRepository,
         IJourFermetureRepository jourFermetureRepository,
         IFermetureHebdoGlobaleRepository fermetureHebdoGlobaleRepository,
         IDisponibiliteRepository disponibiliteRepository) {
+        _siteRepository = siteRepository;
         _horaireSiteRepository = horaireSiteRepository;
         _jourFermetureRepository = jourFermetureRepository;
         _fermetureHebdoGlobaleRepository = fermetureHebdoGlobaleRepository;
@@ -30,13 +33,14 @@ public class DisponibiliteGenerationService : IDisponibiliteGenerationService {
 
         var joursFermeture = await _jourFermetureRepository.GetForSiteAndAnneeAsync(siteId, annee);
         var datesFermees = joursFermeture.Select(j => j.Date).ToHashSet();
-        var joursOuverture = horaire.JoursOuverture.Split(',').ToHashSet();
+        var joursOuverture = JourSemaineMapper.ParseCsv(horaire.JoursOuverture).ToHashSet();
 
-        // Filet de sécurité R-STR-006 : HoraireSiteService vérifie déjà, au moment du
-        // paramétrage, qu'aucun jour d'ouverture ne coïncide avec une fermeture hebdomadaire
-        // globale. Mais FERMETURE_HEBDO_GLOBALE peut être ajoutée après coup pour cette année
-        // (son CRUD n'est pas géré par cette issue) ; on l'exclut donc aussi ici pour que la
-        // (ré)génération manuelle reste toujours cohérente avec la règle.
+        // Filet de sécurité R-STR-006 : la règle est asymétrique (la fermeture hebdomadaire
+        // globale prime sur le paramétrage local, cf. CDC). HoraireSiteService rejette tout
+        // jour d'ouverture déjà fermé globalement, et FermetureHebdoGlobaleService retire déjà,
+        // à l'écriture, tout jour désormais fermé globalement des HORAIRE_SITE existants. On
+        // l'exclut quand même ici en dernier recours, pour que la génération reste toujours
+        // cohérente avec la règle même en cas de données existantes antérieures à ces garde-fous.
         var fermetureGlobale = await _fermetureHebdoGlobaleRepository.GetByAnneeAsync(annee);
         if (fermetureGlobale != null)
             joursOuverture.ExceptWith(fermetureGlobale.JoursFermes.Split(','));
@@ -56,6 +60,18 @@ public class DisponibiliteGenerationService : IDisponibiliteGenerationService {
         await _disponibiliteRepository.RemplacerPourSiteEtAnneeAsync(siteId, annee, disponibilites);
 
         return disponibilites.Count;
+    }
+
+    public async Task<int> GenererPourTousLesSitesEtAnneeAsync(short annee) {
+        var sites = await _siteRepository.GetAllAsync();
+
+        var total = 0;
+        foreach (var site in sites) {
+            var nombreGenere = await GenererPourSiteEtAnneeAsync(site.Id, annee);
+            total += nombreGenere ?? 0;
+        }
+
+        return total;
     }
 
     // Créneaux d'1h30 de match espacés de 15 min de battement, tant que le créneau tient

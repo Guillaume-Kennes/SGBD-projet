@@ -6,6 +6,7 @@ using Xunit;
 namespace PadelManager.Tests;
 
 public class DisponibiliteGenerationServiceTests {
+    private readonly Mock<ISiteRepository> _siteRepoMock;
     private readonly Mock<IHoraireSiteRepository> _horaireRepoMock;
     private readonly Mock<IJourFermetureRepository> _jourFermetureRepoMock;
     private readonly Mock<IFermetureHebdoGlobaleRepository> _fermetureHebdoGlobaleRepoMock;
@@ -13,12 +14,13 @@ public class DisponibiliteGenerationServiceTests {
     private readonly DisponibiliteGenerationService _service;
 
     public DisponibiliteGenerationServiceTests() {
+        _siteRepoMock = new Mock<ISiteRepository>();
         _horaireRepoMock = new Mock<IHoraireSiteRepository>();
         _jourFermetureRepoMock = new Mock<IJourFermetureRepository>();
         _fermetureHebdoGlobaleRepoMock = new Mock<IFermetureHebdoGlobaleRepository>();
         _disponibiliteRepoMock = new Mock<IDisponibiliteRepository>();
         _service = new DisponibiliteGenerationService(
-            _horaireRepoMock.Object, _jourFermetureRepoMock.Object, _fermetureHebdoGlobaleRepoMock.Object, _disponibiliteRepoMock.Object);
+            _siteRepoMock.Object, _horaireRepoMock.Object, _jourFermetureRepoMock.Object, _fermetureHebdoGlobaleRepoMock.Object, _disponibiliteRepoMock.Object);
 
         _jourFermetureRepoMock.Setup(r => r.GetForSiteAndAnneeAsync(It.IsAny<int>(), It.IsAny<short>()))
             .ReturnsAsync(new List<JourFermeture>());
@@ -222,5 +224,45 @@ public class DisponibiliteGenerationServiceTests {
         Assert.NotNull(resultat);
         Assert.Equal(capture!.Count, resultat);
         Assert.True(resultat > 0);
+    }
+
+    [Fact]
+    public async Task GenererPourTousLesSitesEtAnneeAsync_PlusieursSites_SommeLesCreneauxGeneres() {
+        // Arrange
+        _siteRepoMock.Setup(r => r.GetAllAsync()).ReturnsAsync(new List<Site> {
+            new() { Id = 1, Nom = "Site 1" },
+            new() { Id = 2, Nom = "Site 2" },
+            new() { Id = 3, Nom = "Site 3" } // sans horaire configuré -> ignoré
+        });
+        _horaireRepoMock.Setup(r => r.GetBySiteAndAnneeAsync(1, 2026)).ReturnsAsync(new HoraireSite {
+            SiteId = 1, Annee = 2026, JoursOuverture = "LUN",
+            HeureDebutReservation = new TimeOnly(9, 0), HeureFinReservation = new TimeOnly(10, 30)
+        });
+        _horaireRepoMock.Setup(r => r.GetBySiteAndAnneeAsync(2, 2026)).ReturnsAsync(new HoraireSite {
+            SiteId = 2, Annee = 2026, JoursOuverture = "LUN,MAR",
+            HeureDebutReservation = new TimeOnly(9, 0), HeureFinReservation = new TimeOnly(10, 30)
+        });
+        _horaireRepoMock.Setup(r => r.GetBySiteAndAnneeAsync(3, 2026)).ReturnsAsync((HoraireSite?)null);
+
+        // Act
+        var total = await _service.GenererPourTousLesSitesEtAnneeAsync(2026);
+
+        // Assert : site 1 a un jour ouvert/semaine (52 créneaux), site 2 en a deux (104), site 3 aucun
+        _disponibiliteRepoMock.Verify(r => r.RemplacerPourSiteEtAnneeAsync(1, 2026, It.IsAny<List<Disponibilite>>()), Times.Once);
+        _disponibiliteRepoMock.Verify(r => r.RemplacerPourSiteEtAnneeAsync(2, 2026, It.IsAny<List<Disponibilite>>()), Times.Once);
+        _disponibiliteRepoMock.Verify(r => r.RemplacerPourSiteEtAnneeAsync(3, 2026, It.IsAny<List<Disponibilite>>()), Times.Never);
+        Assert.True(total > 0);
+    }
+
+    [Fact]
+    public async Task GenererPourTousLesSitesEtAnneeAsync_AucunSite_RetourneZero() {
+        // Arrange
+        _siteRepoMock.Setup(r => r.GetAllAsync()).ReturnsAsync(new List<Site>());
+
+        // Act
+        var total = await _service.GenererPourTousLesSitesEtAnneeAsync(2026);
+
+        // Assert
+        Assert.Equal(0, total);
     }
 }
