@@ -1,16 +1,171 @@
-name: .NET CI
+﻿name: .NET 9 CI - coverage
 
-on: [push, pull_request]
+on:
+  pull_request:
+    branches: ["main"]
+  push:
+    branches: ["main"]
+
+permissions:
+  contents: read
 
 jobs:
   build:
+    name: Build
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
-        with: { dotnet-version: '9.0.x' }
-      - run: dotnet restore PadelManager.Api/PadelManager.Api.csproj
-      - run: dotnet restore PadelManager.Tests/PadelManager.Tests.csproj
-      - run: dotnet build PadelManager.Api/PadelManager.Api.csproj --configuration Release --no-restore
-      - run: dotnet build PadelManager.Tests/PadelManager.Tests.csproj --configuration Release --no-restore
-      - run: dotnet test PadelManager.Tests/PadelManager.Tests.csproj --configuration Release --no-build --verbosity normal
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 9
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "9.0.x"
+
+      - name: Check .NET version
+        run: dotnet --info
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+
+
+  test:
+    name: Tests + Coverage
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 9
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "9.0.x"
+
+      - name: Check .NET version
+        run: dotnet --info
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+
+      - name: Run tests and collect coverage
+        run: |
+          mkdir -p TestResults
+
+          dotnet test ./Tests/Tests.csproj \
+            --configuration Release \
+            --no-build \
+            --logger "trx;LogFileName=test_results.trx" \
+            --results-directory ./TestResults \
+            --collect:"XPlat Code Coverage"
+
+      - name: Display test results
+        if: always()
+        run: |
+          echo "=== TestResults ==="
+          find TestResults -type f -print || true
+
+          echo ""
+          echo "=== TRX files ==="
+          find TestResults -type f -name "*.trx" -print || true
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: TestResults
+          if-no-files-found: warn
+
+      - name: Install ReportGenerator
+        run: dotnet tool install --global dotnet-reportgenerator-globaltool --version 5.*
+
+      - name: Add dotnet tools to PATH
+        run: echo "$HOME/.dotnet/tools" >> "$GITHUB_PATH"
+
+      - name: Generate coverage reports
+        shell: bash
+        run: |
+          COVERAGE_FILE=$(find TestResults -type f \
+            \( -name "coverage.cobertura.xml" -o -name "coverage.opencover.xml" \) \
+            -print -quit)
+
+          if [ -z "$COVERAGE_FILE" ]; then
+            echo "Coverage file not found."
+            echo "Files found in TestResults:"
+            find TestResults -type f -print || true
+            exit 1
+          fi
+
+          echo "Using coverage file:"
+          echo "$COVERAGE_FILE"
+
+          reportgenerator \
+            -reports:"$COVERAGE_FILE" \
+            -targetdir:CoverageReports \
+            -reporttypes:"Html;TextSummary"
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: CoverageReports
+
+      - name: Add coverage summary
+        if: always()
+        shell: bash
+        run: |
+          echo "## 📊 Code Coverage" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+
+          if [ -f "CoverageReports/Summary.txt" ]; then
+            echo '```text' >> "$GITHUB_STEP_SUMMARY"
+            cat CoverageReports/Summary.txt >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Coverage summary not available." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "📦 Le rapport HTML complet est disponible dans l'artifact **coverage-report**." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Add test results summary
+        if: always()
+        shell: bash
+        run: |
+          echo "## 🧪 Test Results" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+
+          TRX_FILE=$(find TestResults -type f -name "*.trx" -print -quit)
+
+          if [ -z "$TRX_FILE" ]; then
+            echo "❌ Aucun fichier TRX trouvé." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "✅ Fichier de résultats trouvé : \`$TRX_FILE\`" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "Les résultats complets sont disponibles dans l'artifact **test-results**." >> "$GITHUB_STEP_SUMMARY"
+          fi
