@@ -1,16 +1,140 @@
-name: .NET CI
+name: .NET 9 CI - coverage
 
-on: [push, pull_request]
+on:
+  pull_request:
+    branches: ["main"]
+  push:
+    branches: ["main"]
+
+permissions:
+  contents: read
+  checks: write
 
 jobs:
-  build:
+  restore:
+    name: restore
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
-        with: { dotnet-version: '9.0.x' }
-      - run: dotnet restore PadelManager.Api/PadelManager.Api.csproj
-      - run: dotnet restore PadelManager.Tests/PadelManager.Tests.csproj
-      - run: dotnet build PadelManager.Api/PadelManager.Api.csproj --configuration Release --no-restore
-      - run: dotnet build PadelManager.Tests/PadelManager.Tests.csproj --configuration Release --no-restore
-      - run: dotnet test PadelManager.Tests/PadelManager.Tests.csproj --configuration Release --no-build --verbosity normal
+      - name: Setup .NET 9
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '9.0.x'
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: ${{ runner.os }}-nuget-
+      - name: Restore
+        run: dotnet restore
+
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    needs: restore
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup .NET 9
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '9.0.x'
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: ${{ runner.os }}-nuget-
+      - name: Restore
+        run: dotnet restore
+      - name: Build (Release)
+        run: dotnet build --configuration Release --no-restore
+
+  test:
+    name: test + coverage
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup .NET 9
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: ${{ runner.os }}-nuget-
+      - name: Restore
+        run: dotnet restore
+      - name: Build (Release)
+        run: dotnet build --configuration Release --no-restore
+
+      - name: Run tests (TRX) and collect coverage
+        run: |
+          dotnet test ./Tests/Tests.csproj \
+            --configuration Release \
+            --no-build \
+            --logger "trx;LogFileName=test_results.trx" \
+            --results-directory ./TestResults \
+            --collect:"XPlat Code Coverage"
+
+      - name: Show TestResults for debug
+        run: |
+          echo "Listing TestResults:"
+          ls -la TestResults || true
+          find TestResults -type f -maxdepth 3 -print || true
+
+      - name: Upload test results artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: TestResults
+
+      - name: Install ReportGenerator
+        run: dotnet tool install --global dotnet-reportgenerator-globaltool --version 5.*
+
+      - name: Add dotnet tools to PATH
+        run: echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
+
+      - name: Generate coverage reports (HTML + TextSummary)
+        shell: bash
+        run: |
+          # Cherche un fichier Cobertura/OpenCover produit par le collecteur
+          COVERAGE_FILE=$(find TestResults -type f \( -name "coverage.cobertura.xml" -o -name "coverage.opencover.xml" \) -print -quit)
+          if [ -z "$COVERAGE_FILE" ]; then
+            echo "Coverage file not found. Listing TestResults for debug:" >&2
+            find TestResults -type f -ls || true
+            exit 1
+          fi
+          echo "Using coverage file: $COVERAGE_FILE"
+          # ⚠️ Génère aussi le résumé texte (Summary.txt)
+          reportgenerator \
+            -reports:"$COVERAGE_FILE" \
+            -targetdir:CoverageReports \
+            -reporttypes:"Html;TextSummary"
+
+      - name: Upload coverage report artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: CoverageReports
+
+      - name: Post coverage summary to job
+        run: |
+          echo "## Code Coverage" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          # ⚠️ Dossier correct + fichier créé par TextSummary
+          cat CoverageReports/Summary.txt >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "➡️ Rapport HTML complet disponible dans l'artifact **coverage-report**." >> $GITHUB_STEP_SUMMARY
+      - name: Test Reporter (TRX)
+        uses: dorny/test-reporter@v1
+        if: always()
+        with:
+            name: .NET Tests Results
+            path: TestResults/**/*.trx
+            reporter: dotnet-trx
