@@ -1,4 +1,4 @@
-﻿name: .NET 9 CI - coverage
+﻿name: .NET 9 CI
 
 on:
   pull_request:
