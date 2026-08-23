@@ -97,7 +97,7 @@ public class HoraireSiteService : IHoraireSiteService {
     private static HoraireSiteDto VersDto(HoraireSite horaire) => new() {
         SiteId = horaire.SiteId,
         Annee = horaire.Annee,
-        JoursOuverture = horaire.JoursOuverture.Split(',').ToList(),
+        JoursOuverture = JourSemaineMapper.ParseCsv(horaire.JoursOuverture),
         HeureDebutReservation = horaire.HeureDebutReservation,
         HeureFinReservation = horaire.HeureFinReservation
     };
