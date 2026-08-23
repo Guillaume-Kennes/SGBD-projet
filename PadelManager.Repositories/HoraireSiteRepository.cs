@@ -16,6 +16,12 @@ public class HoraireSiteRepository : IHoraireSiteRepository {
             .FirstOrDefaultAsync(h => h.SiteId == siteId && h.Annee == annee);
     }
 
+    public async Task<List<HoraireSite>> GetAllForAnneeAsync(short annee) {
+        return await _context.HoraireSites
+            .Where(h => h.Annee == annee)
+            .ToListAsync();
+    }
+
     public async Task UpsertAsync(HoraireSite horaire) {
         var existant = await _context.HoraireSites
             .FirstOrDefaultAsync(h => h.SiteId == horaire.SiteId && h.Annee == horaire.Annee);

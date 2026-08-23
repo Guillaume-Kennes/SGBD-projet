@@ -47,4 +47,97 @@ public class JourFermetureRepositoryTests {
         // Assert
         Assert.Empty(resultat);
     }
+
+    [Fact]
+    public async Task GetByIdAsync_FermetureExistante_RetourneLaFermeture() {
+        // Arrange
+        await using var context = CreerContexteEnMemoire();
+        context.Sites.Add(new Site { Id = 1, Nom = "Site 1" });
+        var jour = new JourFermeture { SiteId = 1, Date = new DateOnly(2026, 12, 24) };
+        context.JourFermetures.Add(jour);
+        await context.SaveChangesAsync();
+
+        var repository = new JourFermetureRepository(context);
+
+        // Act
+        var resultat = await repository.GetByIdAsync(jour.Id);
+
+        // Assert
+        Assert.NotNull(resultat);
+        Assert.Equal(new DateOnly(2026, 12, 24), resultat!.Date);
+    }
+
+    [Fact]
+    public async Task GetByIdAsync_Inexistante_RetourneNull() {
+        // Arrange
+        await using var context = CreerContexteEnMemoire();
+        var repository = new JourFermetureRepository(context);
+
+        // Act
+        var resultat = await repository.GetByIdAsync(999);
+
+        // Assert
+        Assert.Null(resultat);
+    }
+
+    [Fact]
+    public async Task ExisteAsync_DejaDeclaree_RetourneTrue() {
+        // Arrange
+        await using var context = CreerContexteEnMemoire();
+        context.Sites.Add(new Site { Id = 1, Nom = "Site 1" });
+        context.JourFermetures.Add(new JourFermeture { SiteId = 1, Date = new DateOnly(2026, 12, 24) });
+        await context.SaveChangesAsync();
+
+        var repository = new JourFermetureRepository(context);
+
+        // Act & Assert
+        Assert.True(await repository.ExisteAsync(1, new DateOnly(2026, 12, 24)));
+        Assert.False(await repository.ExisteAsync(1, new DateOnly(2026, 12, 25)));
+        Assert.False(await repository.ExisteAsync(null, new DateOnly(2026, 12, 24)));
+    }
+
+    [Fact]
+    public async Task AddAsync_Ajoute() {
+        // Arrange
+        await using var context = CreerContexteEnMemoire();
+        context.Sites.Add(new Site { Id = 1, Nom = "Site 1" });
+        await context.SaveChangesAsync();
+
+        var repository = new JourFermetureRepository(context);
+
+        // Act
+        var resultat = await repository.AddAsync(new JourFermeture { SiteId = 1, Date = new DateOnly(2026, 12, 24) });
+
+        // Assert
+        Assert.NotEqual(0, resultat.Id);
+        Assert.Single(context.JourFermetures);
+    }
+
+    [Fact]
+    public async Task DeleteAsync_FermetureExistante_Supprime() {
+        // Arrange
+        await using var context = CreerContexteEnMemoire();
+        context.Sites.Add(new Site { Id = 1, Nom = "Site 1" });
+        var jour = new JourFermeture { SiteId = 1, Date = new DateOnly(2026, 12, 24) };
+        context.JourFermetures.Add(jour);
+        await context.SaveChangesAsync();
+
+        var repository = new JourFermetureRepository(context);
+
+        // Act
+        await repository.DeleteAsync(jour.Id);
+
+        // Assert
+        Assert.Empty(context.JourFermetures);
+    }
+
+    [Fact]
+    public async Task DeleteAsync_Inexistante_NeFaitRien() {
+        // Arrange
+        await using var context = CreerContexteEnMemoire();
+        var repository = new JourFermetureRepository(context);
+
+        // Act & Assert (ne lève pas)
+        await repository.DeleteAsync(999);
+    }
 }

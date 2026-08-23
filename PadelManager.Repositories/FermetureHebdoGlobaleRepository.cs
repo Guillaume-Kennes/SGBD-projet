@@ -15,4 +15,27 @@ public class FermetureHebdoGlobaleRepository : IFermetureHebdoGlobaleRepository 
         return await _context.FermetureHebdoGlobales
             .FirstOrDefaultAsync(f => f.Annee == annee);
     }
+
+    public async Task UpsertAsync(FermetureHebdoGlobale fermeture) {
+        var existante = await _context.FermetureHebdoGlobales
+            .FirstOrDefaultAsync(f => f.Annee == fermeture.Annee);
+
+        if (existante == null) {
+            _context.FermetureHebdoGlobales.Add(fermeture);
+        } else {
+            existante.JoursFermes = fermeture.JoursFermes;
+        }
+
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task DeleteAsync(short annee) {
+        var existante = await _context.FermetureHebdoGlobales
+            .FirstOrDefaultAsync(f => f.Annee == annee);
+        if (existante == null)
+            return;
+
+        _context.FermetureHebdoGlobales.Remove(existante);
+        await _context.SaveChangesAsync();
+    }
 }
