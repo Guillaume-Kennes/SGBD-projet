@@ -71,3 +71,12 @@ secrets.json
 .github/copilot/
 .github/copilot-instructions.md
 .vscode/
+
+# Claude Code (config/cache locale)
+.claude/
+
+# Documentation et scripts SQL — remis séparément sur Moodle,
+# gardés en local uniquement pour que Claude Code puisse les lire
+docs
+database/*.sql
+
