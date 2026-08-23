@@ -1,6 +1,6 @@
-﻿namespace PadelManager.WinForms
+namespace PadelManager.WinForms.Admin
 {
-    partial class LoginForm
+    partial class AdminLoginForm
     {
         /// <summary>
         ///  Required designer variable.
@@ -27,31 +27,30 @@
         ///  the contents of this method with the code editor.
         /// </summary>
         private void InitializeComponent() {
-            matricule = new Label();
+            lblMatricule = new Label();
             txtMatricule = new TextBox();
             btnConnexion = new Button();
             lblMessage = new Label();
             SuspendLayout();
-            // 
-            // matricule
-            // 
-            matricule.AutoSize = true;
-            matricule.Location = new Point(237, 206);
-            matricule.Name = "matricule";
-            matricule.Size = new Size(71, 20);
-            matricule.TabIndex = 0;
-            matricule.Text = "Matricule";
-            matricule.Click += label1_Click;
-            // 
+            //
+            // lblMatricule
+            //
+            lblMatricule.AutoSize = true;
+            lblMatricule.Location = new Point(237, 206);
+            lblMatricule.Name = "lblMatricule";
+            lblMatricule.Size = new Size(71, 20);
+            lblMatricule.TabIndex = 0;
+            lblMatricule.Text = "Matricule";
+            //
             // txtMatricule
-            // 
+            //
             txtMatricule.Location = new Point(326, 203);
             txtMatricule.Name = "txtMatricule";
             txtMatricule.Size = new Size(125, 27);
             txtMatricule.TabIndex = 1;
-            // 
+            //
             // btnConnexion
-            // 
+            //
             btnConnexion.Location = new Point(326, 255);
             btnConnexion.Name = "btnConnexion";
             btnConnexion.Size = new Size(110, 29);
@@ -59,34 +58,33 @@
             btnConnexion.Text = "Se connecter";
             btnConnexion.UseVisualStyleBackColor = true;
             btnConnexion.Click += btnConnexion_Click;
-            // 
+            //
             // lblMessage
-            // 
+            //
             lblMessage.AutoSize = true;
             lblMessage.Location = new Point(246, 87);
             lblMessage.Name = "lblMessage";
             lblMessage.Size = new Size(0, 20);
             lblMessage.TabIndex = 3;
-            // 
-            // LoginForm
-            // 
+            //
+            // AdminLoginForm
+            //
             AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(800, 450);
             Controls.Add(lblMessage);
             Controls.Add(btnConnexion);
             Controls.Add(txtMatricule);
-            Controls.Add(matricule);
-            Name = "LoginForm";
-            Text = "PadelManager — Membre";
-            Load += LoginForm_Load;
+            Controls.Add(lblMatricule);
+            Name = "AdminLoginForm";
+            Text = "PadelManager — Administration";
             ResumeLayout(false);
             PerformLayout();
         }
 
         #endregion
 
-        private Label matricule;
+        private Label lblMatricule;
         private TextBox txtMatricule;
         private Button btnConnexion;
         private Label lblMessage;

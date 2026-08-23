@@ -37,12 +37,17 @@ namespace PadelManager.WinForms
                     return;
                 }
 
-                lblMessage.Text = $"ConnectÈ : {resultat.Matricule} ({resultat.TypeUtilisateur} - {resultat.Type})";
+                if (resultat.TypeUtilisateur != "Membre") {
+                    lblMessage.Text = "Acc√®s r√©serv√© aux membres.";
+                    return;
+                }
 
-                // TODO (issues futures) : ouvrir MainForm selon le rÙle,
+                lblMessage.Text = $"Connect√© : {resultat.Matricule} ({resultat.TypeUtilisateur} - {resultat.Type})";
+
+                // TODO (issues futures) : ouvrir MainForm selon le r√¥le,
                 // en lui passant `resultat` pour adapter l'interface.
             } catch (HttpRequestException) {
-                lblMessage.Text = "Impossible de contacter le serveur. VÈrifiez que l'API est lancÈe.";
+                lblMessage.Text = "Impossible de contacter le serveur. V√©rifiez que l'API est lanc√©e.";
             } finally {
                 btnConnexion.Enabled = true;
             }

@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.14.37531.7
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PadelManager.WinForms", "PadelManager.WinForms\PadelManager.WinForms.csproj", "{3DE0667F-D412-46D1-8FA6-77CBC286CC75}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PadelManager.WinForms.Membre", "PadelManager.WinForms\PadelManager.WinForms.Membre.csproj", "{3DE0667F-D412-46D1-8FA6-77CBC286CC75}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PadelManager.Api", "PadelManager.Api\PadelManager.Api.csproj", "{DB2B4426-45D1-485C-8F0B-915159773EEC}"
 EndProject
@@ -21,6 +21,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Éléments de solution", "�
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PadelManager.Interfaces", "PadelManager.Interfaces\PadelManager.Interfaces.csproj", "{765341B2-F09E-4FED-97FA-076C4EAF3175}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PadelManager.WinForms.Admin", "PadelManager.WinForms.Admin\PadelManager.WinForms.Admin.csproj", "{07E9E35A-1FBE-4A62-84CF-18FA4CA5A21A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -56,6 +58,10 @@ Global
 		{765341B2-F09E-4FED-97FA-076C4EAF3175}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{765341B2-F09E-4FED-97FA-076C4EAF3175}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{765341B2-F09E-4FED-97FA-076C4EAF3175}.Release|Any CPU.Build.0 = Release|Any CPU
+		{07E9E35A-1FBE-4A62-84CF-18FA4CA5A21A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{07E9E35A-1FBE-4A62-84CF-18FA4CA5A21A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{07E9E35A-1FBE-4A62-84CF-18FA4CA5A21A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{07E9E35A-1FBE-4A62-84CF-18FA4CA5A21A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
