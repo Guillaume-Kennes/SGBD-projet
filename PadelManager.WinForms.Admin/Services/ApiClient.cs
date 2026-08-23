@@ -29,6 +29,27 @@ public class HoraireSiteRequete {
     public TimeOnly HeureFinReservation { get; set; }
 }
 
+public class JourFermetureResultat {
+    public int Id { get; set; }
+    public int? SiteId { get; set; }
+    public DateOnly Date { get; set; }
+}
+
+// SiteId == null -> fermeture ponctuelle globale (tous les sites), réservée à l'admin global.
+public class JourFermetureRequete {
+    public int? SiteId { get; set; }
+    public DateOnly Date { get; set; }
+}
+
+public class FermetureHebdoGlobaleResultat {
+    public int Annee { get; set; }
+    public List<string> JoursFermes { get; set; } = new();
+}
+
+public class FermetureHebdoGlobaleRequete {
+    public List<string> JoursFermes { get; set; } = new();
+}
+
 // Résultat enrichi (succès + message d'erreur éventuel) pour les appels dont l'échec doit être
 // expliqué à l'utilisateur, contrairement à ConnexionAsync qui renvoie simplement null.
 public class ApiResult<T> {
@@ -83,6 +104,58 @@ public class ApiClient {
 
         var horaire = await response.Content.ReadFromJsonAsync<HoraireSiteResultat>();
         return new ApiResult<HoraireSiteResultat> { Succes = true, Data = horaire };
+    }
+
+    public async Task<List<JourFermetureResultat>?> ObtenirFermeturesPonctuellesAsync(int siteId, int annee) {
+        var response = await _httpClient.GetAsync($"api/sites/{siteId}/fermetures-ponctuelles?annee={annee}");
+
+        if (!response.IsSuccessStatusCode)
+            return null;
+
+        return await response.Content.ReadFromJsonAsync<List<JourFermetureResultat>>();
+    }
+
+    public async Task<ApiResult<JourFermetureResultat>> DeclarerFermetureAsync(JourFermetureRequete requete) {
+        var response = await _httpClient.PostAsJsonAsync("api/fermetures-ponctuelles", requete);
+
+        if (!response.IsSuccessStatusCode) {
+            var message = await LireMessageErreurAsync(response);
+            return new ApiResult<JourFermetureResultat> { Succes = false, Message = message };
+        }
+
+        var fermeture = await response.Content.ReadFromJsonAsync<JourFermetureResultat>();
+        return new ApiResult<JourFermetureResultat> { Succes = true, Data = fermeture };
+    }
+
+    public async Task<bool> SupprimerFermetureAsync(int id) {
+        var response = await _httpClient.DeleteAsync($"api/fermetures-ponctuelles/{id}");
+        return response.IsSuccessStatusCode;
+    }
+
+    public async Task<FermetureHebdoGlobaleResultat?> ObtenirFermetureHebdoGlobaleAsync(int annee) {
+        var response = await _httpClient.GetAsync($"api/fermetures-hebdo-globales/{annee}");
+
+        if (!response.IsSuccessStatusCode)
+            return null;
+
+        return await response.Content.ReadFromJsonAsync<FermetureHebdoGlobaleResultat>();
+    }
+
+    public async Task<ApiResult<FermetureHebdoGlobaleResultat>> DefinirFermetureHebdoGlobaleAsync(int annee, FermetureHebdoGlobaleRequete requete) {
+        var response = await _httpClient.PutAsJsonAsync($"api/fermetures-hebdo-globales/{annee}", requete);
+
+        if (!response.IsSuccessStatusCode) {
+            var message = await LireMessageErreurAsync(response);
+            return new ApiResult<FermetureHebdoGlobaleResultat> { Succes = false, Message = message };
+        }
+
+        var fermeture = await response.Content.ReadFromJsonAsync<FermetureHebdoGlobaleResultat>();
+        return new ApiResult<FermetureHebdoGlobaleResultat> { Succes = true, Data = fermeture };
+    }
+
+    public async Task<bool> SupprimerFermetureHebdoGlobaleAsync(int annee) {
+        var response = await _httpClient.DeleteAsync($"api/fermetures-hebdo-globales/{annee}");
+        return response.IsSuccessStatusCode;
     }
 
     private static async Task<string?> LireMessageErreurAsync(HttpResponseMessage response) {

@@ -4,7 +4,7 @@ namespace PadelManager.WinForms.Admin
 {
     // Point d'entrée de l'application Admin. Même principe que LoginForm côté Membre (saisie du
     // matricule, vérification via /api/auth/connexion), mais rejette tout matricule qui n'est
-    // pas de type "Administrateur". Ouvre HoraireSiteForm une fois la connexion validée.
+    // pas de type "Administrateur". Ouvre AdminMenuForm une fois la connexion validée.
     public partial class AdminLoginForm : Form {
 
         private readonly ApiClient _apiClient = new();
@@ -38,13 +38,13 @@ namespace PadelManager.WinForms.Admin
                 }
 
                 Hide();
-                using var horaireSiteForm = new HoraireSiteForm();
-                horaireSiteForm.ShowDialog();
+                using var menuForm = new AdminMenuForm(resultat);
+                menuForm.ShowDialog();
                 Close();
             } catch (HttpRequestException) {
                 lblMessage.Text = "Impossible de contacter le serveur. Vérifiez que l'API est lancée.";
             } finally {
-                // HoraireSiteForm peut avoir fermé/disposé ce formulaire entre-temps (connexion
+                // AdminMenuForm peut avoir fermé/disposé ce formulaire entre-temps (connexion
                 // réussie) : dans ce cas il n'y a plus de bouton à réactiver.
                 if (!IsDisposed)
                     btnConnexion.Enabled = true;

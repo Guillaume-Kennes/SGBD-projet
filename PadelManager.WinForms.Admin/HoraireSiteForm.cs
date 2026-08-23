@@ -4,15 +4,19 @@ namespace PadelManager.WinForms.Admin
 {
     // Paramétrage annuel du site (EF-bk-003) : jours d'ouverture + plage horaire de réservation.
     // L'enregistrement déclenche automatiquement, côté API, la régénération des disponibilités
-    // (EF-bk-022). Accessible uniquement après connexion via AdminLoginForm.
+    // (EF-bk-022). Accessible uniquement après connexion via AdminLoginForm. Un admin de site
+    // gère uniquement les données de son propre site (cf. CDC 2.2, "Administrateur de site") :
+    // il est donc verrouillé sur son site, comme dans JourFermetureForm.
     public partial class HoraireSiteForm : Form {
 
         private readonly ApiClient _apiClient = new();
+        private readonly ConnexionResultat _connexion;
 
         private readonly Dictionary<string, CheckBox> _checkBoxParJour;
 
-        public HoraireSiteForm() {
+        public HoraireSiteForm(ConnexionResultat connexion) {
             InitializeComponent();
+            _connexion = connexion;
 
             _checkBoxParJour = new Dictionary<string, CheckBox> {
                 ["LUN"] = chkLun,
@@ -29,7 +33,13 @@ namespace PadelManager.WinForms.Admin
         }
 
         private async void HoraireSiteForm_Load(object sender, EventArgs e) {
-            await FormulaireHelpers.ChargerSitesAsync(_apiClient, cboSite, lblMessage);
+            var chargementReussi = await FormulaireHelpers.ChargerSitesAsync(_apiClient, cboSite, lblMessage);
+
+            if (_connexion.Type == "SITE") {
+                cboSite.Enabled = false;
+                if (chargementReussi && _connexion.SiteId.HasValue)
+                    cboSite.SelectedValue = _connexion.SiteId.Value;
+            }
         }
 
         private async void btnCharger_Click(object sender, EventArgs e) {
