@@ -50,6 +50,28 @@ public class HoraireSiteRepositoryTests {
     }
 
     [Fact]
+    public async Task GetAllForAnneeAsync_PlusieursSites_RetourneTousLesHorairesDeLAnnee() {
+        // Arrange
+        await using var context = CreerContexteEnMemoire();
+        context.Sites.AddRange(new Site { Id = 1, Nom = "Site 1" }, new Site { Id = 2, Nom = "Site 2" });
+        context.HoraireSites.AddRange(
+            new HoraireSite { SiteId = 1, Annee = 2026, JoursOuverture = "LUN", HeureDebutReservation = new TimeOnly(9, 0), HeureFinReservation = new TimeOnly(21, 0) },
+            new HoraireSite { SiteId = 2, Annee = 2026, JoursOuverture = "MAR", HeureDebutReservation = new TimeOnly(9, 0), HeureFinReservation = new TimeOnly(21, 0) },
+            new HoraireSite { SiteId = 1, Annee = 2025, JoursOuverture = "MER", HeureDebutReservation = new TimeOnly(9, 0), HeureFinReservation = new TimeOnly(21, 0) });
+        await context.SaveChangesAsync();
+
+        var repository = new HoraireSiteRepository(context);
+
+        // Act
+        var resultat = await repository.GetAllForAnneeAsync(2026);
+
+        // Assert
+        Assert.Equal(2, resultat.Count);
+        Assert.Contains(resultat, h => h.SiteId == 1 && h.JoursOuverture == "LUN");
+        Assert.Contains(resultat, h => h.SiteId == 2 && h.JoursOuverture == "MAR");
+    }
+
+    [Fact]
     public async Task UpsertAsync_AucunHoraireExistant_Cree() {
         // Arrange
         await using var context = CreerContexteEnMemoire();

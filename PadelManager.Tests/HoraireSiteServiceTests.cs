@@ -153,4 +153,23 @@ public class HoraireSiteServiceTests {
 
         Assert.Null(resultat);
     }
+
+    // Un site entièrement vidé de ses jours d'ouverture par FermetureHebdoGlobaleService (R-STR-006
+    // asymétrique) stocke JoursOuverture = "" ; "".Split(',') renvoie [""] en C#, pas [] : le DTO
+    // doit tout de même exposer une liste vide, pas une liste contenant une chaîne vide.
+    [Fact]
+    public async Task ObtenirHoraireAsync_HoraireVide_RetourneListeVide() {
+        _horaireRepoMock.Setup(r => r.GetBySiteAndAnneeAsync(1, 2026)).ReturnsAsync(new HoraireSite {
+            SiteId = 1,
+            Annee = 2026,
+            JoursOuverture = "",
+            HeureDebutReservation = new TimeOnly(9, 0),
+            HeureFinReservation = new TimeOnly(21, 0)
+        });
+
+        var resultat = await _service.ObtenirHoraireAsync(1, 2026);
+
+        Assert.NotNull(resultat);
+        Assert.Empty(resultat!.JoursOuverture);
+    }
 }

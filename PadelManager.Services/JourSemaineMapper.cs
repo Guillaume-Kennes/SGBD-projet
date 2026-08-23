@@ -18,4 +18,11 @@ public static class JourSemaineMapper {
     public static string CodePour(DayOfWeek jour) => CodesParJour[jour];
 
     public static bool EstCodeValide(string code) => CodesValides.Contains(code);
+
+    // Découpe une liste CSV de codes jour (ex. "LUN,MER,VEN") en gérant proprement la chaîne
+    // vide : "".Split(',') renvoie [""] en C# (un élément, pas zéro), ce qui fausserait le
+    // contrat des DTOs pour un HORAIRE_SITE devenu vide (cf. FermetureHebdoGlobaleService, qui
+    // peut désormais retirer tous les jours d'ouverture d'un site).
+    public static List<string> ParseCsv(string? codes) =>
+        string.IsNullOrEmpty(codes) ? new List<string>() : codes.Split(',').ToList();
 }
