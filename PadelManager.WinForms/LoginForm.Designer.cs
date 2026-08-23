@@ -78,7 +78,7 @@
             Controls.Add(txtMatricule);
             Controls.Add(matricule);
             Name = "LoginForm";
-            Text = "Form1";
+            Text = "PadelManager — Membre";
             Load += LoginForm_Load;
             ResumeLayout(false);
             PerformLayout();

@@ -1,5 +1,4 @@
-﻿using System.Net.Http.Json;
-using System.Text.Json;
+using System.Net.Http.Json;
 
 namespace PadelManager.WinForms.Services;
 
@@ -8,6 +7,18 @@ public class ConnexionResultat {
     public string TypeUtilisateur { get; set; } = null!;
     public string Type { get; set; } = null!;
     public int? SiteId { get; set; }
+}
+
+public class SiteResultat {
+    public int Id { get; set; }
+    public string Nom { get; set; } = null!;
+}
+
+public class DisponibiliteResultat {
+    public int SiteId { get; set; }
+    public DateOnly Date { get; set; }
+    public TimeOnly HeureDebut { get; set; }
+    public TimeOnly HeureFin { get; set; }
 }
 
 public class ApiClient {
@@ -27,6 +38,23 @@ public class ApiClient {
 
         return await response.Content.ReadFromJsonAsync<ConnexionResultat>();
     }
+
+    public async Task<List<SiteResultat>?> ObtenirSitesAsync() {
+        var response = await _httpClient.GetAsync("api/sites");
+
+        if (!response.IsSuccessStatusCode)
+            return null;
+
+        return await response.Content.ReadFromJsonAsync<List<SiteResultat>>();
+    }
+
+    public async Task<List<DisponibiliteResultat>?> ConsulterPlanningAsync(int siteId, DateOnly from, DateOnly to) {
+        var response = await _httpClient.GetAsync(
+            $"api/sites/{siteId}/disponibilites?from={from:yyyy-MM-dd}&to={to:yyyy-MM-dd}");
+
+        if (!response.IsSuccessStatusCode)
+            return null;
+
+        return await response.Content.ReadFromJsonAsync<List<DisponibiliteResultat>>();
+    }
 }
-
-
