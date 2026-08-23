@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace PadelManager.Models;
+using PadelManager.Models;
 
 public partial class HoraireSite
 {
@@ -10,6 +10,8 @@ public partial class HoraireSite
     public int SiteId { get; set; }
 
     public short Annee { get; set; }
+
+    public string JoursOuverture { get; set; } = null!;
 
     public TimeOnly HeureDebutReservation { get; set; }
 

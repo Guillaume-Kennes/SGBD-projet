@@ -16,6 +16,10 @@ public partial class PadelManagerDbContext : DbContext
 
     public virtual DbSet<Dette> Dettes { get; set; }
 
+    public virtual DbSet<Disponibilite> Disponibilites { get; set; }
+
+    public virtual DbSet<FermetureHebdoGlobale> FermetureHebdoGlobales { get; set; }
+
     public virtual DbSet<HoraireSite> HoraireSites { get; set; }
 
     public virtual DbSet<JourFermeture> JourFermetures { get; set; }
@@ -96,6 +100,44 @@ public partial class PadelManagerDbContext : DbContext
                 .HasConstraintName("FK_DETTE_MEMBRE");
         });
 
+        modelBuilder.Entity<Disponibilite>(entity =>
+        {
+            entity.ToTable("DISPONIBILITE");
+
+            entity.HasIndex(e => new { e.SiteId, e.Date }, "IX_DISPONIBILITE_site_date");
+
+            entity.HasIndex(e => new { e.SiteId, e.Date, e.HeureDebut }, "UQ_DISPONIBILITE_site_date_heure").IsUnique();
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.Date).HasColumnName("date");
+            entity.Property(e => e.HeureDebut)
+                .HasPrecision(0)
+                .HasColumnName("heureDebut");
+            entity.Property(e => e.HeureFin)
+                .HasPrecision(0)
+                .HasColumnName("heureFin");
+            entity.Property(e => e.SiteId).HasColumnName("siteId");
+
+            entity.HasOne(d => d.Site).WithMany(p => p.Disponibilites)
+                .HasForeignKey(d => d.SiteId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_DISPONIBILITE_SITE");
+        });
+
+        modelBuilder.Entity<FermetureHebdoGlobale>(entity =>
+        {
+            entity.HasKey(e => e.Annee);
+
+            entity.ToTable("FERMETURE_HEBDO_GLOBALE");
+
+            entity.Property(e => e.Annee)
+                .ValueGeneratedNever()
+                .HasColumnName("annee");
+            entity.Property(e => e.JoursFermes)
+                .HasMaxLength(50)
+                .HasColumnName("joursFermes");
+        });
+
         modelBuilder.Entity<HoraireSite>(entity =>
         {
             entity.ToTable("HORAIRE_SITE");
@@ -110,6 +152,9 @@ public partial class PadelManagerDbContext : DbContext
             entity.Property(e => e.HeureFinReservation)
                 .HasPrecision(0)
                 .HasColumnName("heureFinReservation");
+            entity.Property(e => e.JoursOuverture)
+                .HasMaxLength(50)
+                .HasColumnName("joursOuverture");
             entity.Property(e => e.SiteId).HasColumnName("siteId");
 
             entity.HasOne(d => d.Site).WithMany(p => p.HoraireSites)
@@ -303,7 +348,9 @@ public partial class PadelManagerDbContext : DbContext
 
             entity.HasIndex(e => new { e.SiteId, e.Numero }, "UQ_TERRAIN_site_numero").IsUnique();
 
-            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.Id)
+                .ValueGeneratedNever()
+                .HasColumnName("id");
             entity.Property(e => e.Numero).HasColumnName("numero");
             entity.Property(e => e.SiteId).HasColumnName("siteId");
 
@@ -322,11 +369,10 @@ public partial class PadelManagerDbContext : DbContext
             entity.Property(e => e.Code)
                 .HasMaxLength(10)
                 .HasColumnName("code");
-            entity.Property(e => e.DelaiMinimumJours).HasColumnName("delaiMinimumJours");
+            entity.Property(e => e.AnticipationMaxJours).HasColumnName("anticipationMaxJours");
             entity.Property(e => e.Libelle)
                 .HasMaxLength(50)
                 .HasColumnName("libelle");
-            entity.Property(e => e.PeutOrganiser).HasColumnName("peutOrganiser");
             entity.Property(e => e.PrefixeMatricule)
                 .HasMaxLength(5)
                 .HasColumnName("prefixeMatricule");
