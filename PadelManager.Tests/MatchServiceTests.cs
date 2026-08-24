@@ -523,19 +523,21 @@ public class MatchServiceTests {
         Assert.Equal(1, resultat![0].SiteId);
     }
 
+    // R-VAL-003 (CDC v0.11) : l'anticipation maximum par type de membre ne borne que la création
+    // d'un match, jamais la consultation — un membre Libre voit tous les sites, sans aucune limite
+    // de délai, y compris un match très éloigné dans le temps.
     [Fact]
-    public async Task ObtenirMatchsPublicsAsync_MembreLibre_NeVoitQueLes5ProchainsJours() {
+    public async Task ObtenirMatchsPublicsAsync_MembreLibre_VoitSansLimiteDeDelai() {
         _membreRepoMock.Setup(r => r.GetByMatriculeAsync("L00001")).ReturnsAsync(MembreValide("L00001", "LIBRE", null, 5));
         _matchRepoMock.Setup(r => r.GetPublicsIncompletsAsync(It.IsAny<DateTime>())).ReturnsAsync(new List<Match> {
             MatchPublic(1, 1, DateTime.Now.AddDays(5), "G0001"),
-            MatchPublic(2, 1, DateTime.Now.AddDays(6), "G0001")
+            MatchPublic(2, 1, DateTime.Now.AddDays(60), "G0001")
         });
 
         var resultat = await _service.ObtenirMatchsPublicsAsync("L00001");
 
         Assert.NotNull(resultat);
-        Assert.Single(resultat!);
-        Assert.Equal(1, resultat![0].Id);
+        Assert.Equal(2, resultat!.Count);
     }
 
     [Fact]
@@ -625,23 +627,13 @@ public class MatchServiceTests {
         Assert.True(resultat.Succes);
     }
 
-    // R-VAL-003
+    // R-VAL-003 (CDC v0.11) : l'anticipation maximum par type de membre ne borne que la création
+    // d'un match, jamais l'inscription à une place libre — aucune limite de délai pour Libre.
     [Fact]
-    public async Task RejoindreMatchPublicAsync_MembreLibreTropLoin_RetourneEchec() {
+    public async Task RejoindreMatchPublicAsync_MembreLibreSansLimiteDeDelai_Autorise() {
         _membreRepoMock.Setup(r => r.GetByMatriculeAsync("L00001")).ReturnsAsync(MembreValide("L00001", "LIBRE", null, 5));
         _matchRepoMock.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(
-            new Match { Id = 1, SiteId = 1, TerrainId = 11, DateHeure = DateTime.Now.AddDays(6), Visibilite = "PUBLIC", OrganisateurMatricule = "G0001", Statut = "INCOMPLET" });
-
-        var resultat = await _service.RejoindreMatchPublicAsync(1, "L00001");
-
-        Assert.False(resultat.Succes);
-    }
-
-    [Fact]
-    public async Task RejoindreMatchPublicAsync_MembreLibreDansLaFenetre_Autorise() {
-        _membreRepoMock.Setup(r => r.GetByMatriculeAsync("L00001")).ReturnsAsync(MembreValide("L00001", "LIBRE", null, 5));
-        _matchRepoMock.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(
-            new Match { Id = 1, SiteId = 1, TerrainId = 11, DateHeure = DateTime.Now.AddDays(5), Visibilite = "PUBLIC", OrganisateurMatricule = "G0001", Statut = "INCOMPLET" });
+            new Match { Id = 1, SiteId = 1, TerrainId = 11, DateHeure = DateTime.Now.AddDays(60), Visibilite = "PUBLIC", OrganisateurMatricule = "G0001", Statut = "INCOMPLET" });
 
         var resultat = await _service.RejoindreMatchPublicAsync(1, "L00001");
 

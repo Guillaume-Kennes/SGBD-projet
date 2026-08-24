@@ -119,16 +119,12 @@ public class MatchService : IMatchService {
         // ce match ; tenter de le rejoindre échouerait de toute façon (DejaInscritException).
         IEnumerable<Match> visibles = matchs.Where(m => m.Participations.All(p => p.MembreMatricule != membreMatricule));
 
-        // R-ACC-002 : un membre de site ne voit que les matchs publics de son site.
+        // R-ACC-002 : un membre de site ne voit que les matchs publics de son site. Global et
+        // Libre voient tous les sites, sans aucune restriction de délai (R-VAL-003 : l'anticipation
+        // maximum par type de membre ne borne que la création d'un match, jamais la consultation).
         if (membre.TypeMembre == "SITE") {
             visibles = visibles.Where(m => m.SiteId == membre.SiteId);
         }
-        // R-VAL-003 : un membre Libre ne voit que les matchs à 5 jours ou moins de la date du jour.
-        else if (membre.TypeMembre == "LIBRE") {
-            var limite = DateOnly.FromDateTime(DateTime.Today).AddDays(5);
-            visibles = visibles.Where(m => DateOnly.FromDateTime(m.DateHeure) <= limite);
-        }
-        // GLOBAL : aucune restriction de site ni de délai (R-ACC-001).
 
         return visibles
             .OrderBy(m => m.DateHeure)
@@ -152,15 +148,10 @@ public class MatchService : IMatchService {
             return EchecInscription("Ce match a déjà commencé.");
 
         // R-ACC-002 : un membre de site ne peut rejoindre que les matchs publics de son site.
+        // Aucune restriction de délai pour Libre (R-VAL-003 : l'anticipation maximum par type de
+        // membre ne borne que la création d'un match, jamais l'inscription à une place libre).
         if (membre.TypeMembre == "SITE" && membre.SiteId != match.SiteId)
             return EchecInscription("Un membre de site ne peut rejoindre un match public que sur son site de rattachement.");
-
-        // R-VAL-003 : un membre Libre ne peut rejoindre que dans les 5 jours qui précèdent la date.
-        if (membre.TypeMembre == "LIBRE") {
-            var ecart = DateOnly.FromDateTime(match.DateHeure).DayNumber - DateOnly.FromDateTime(DateTime.Today).DayNumber;
-            if (ecart > 5)
-                return EchecInscription("Un membre Libre ne peut rejoindre un match public que dans les 5 jours qui précèdent sa date.");
-        }
 
         // R-ACC-006 : contrairement à la création, une dette non soldée ne bloque pas
         // l'inscription — elle est au contraire automatiquement réglée par ce paiement
@@ -212,7 +203,9 @@ public class MatchService : IMatchService {
         // réservation. Une dette active est au contraire automatiquement réglée (EF-bk-018),
         // exactement comme pour l'inscription à un match public. Pas de vérification "match déjà
         // commencé" non plus : une place non payée reste payable jusqu'au job de bascule
-        // (EF-bk-009), qui seul la libère.
+        // (EF-bk-009), qui seul la libère. Idem pour l'anticipation maximum par type de membre
+        // (R-VAL-003) : elle ne borne que la création, jamais le paiement d'une place existante —
+        // aucune vérification de délai ici, ni de portée site (déjà membre du match).
         var dette = await _detteRepository.GetNonSoldeeAsync(membre.Matricule);
 
         try {
@@ -304,8 +297,9 @@ public class MatchService : IMatchService {
     // EF-bk-021 : consultable si organisateur/participant, quel que soit le site ou la visibilité
     // (un joueur invité à un match privé sur un autre site — R-ACC-005 — doit pouvoir en voir le
     // détail) ; sinon, uniquement si le match est public et dans le périmètre du membre (EF-bk-012,
-    // même règle de portée que pour rejoindre — R-ACC-002 — mais sans la fenêtre de délai de
-    // R-VAL-003, qui ne borne que la validation d'une inscription, pas la consultation).
+    // même règle de portée site que pour rejoindre — R-ACC-002). Aucune vérification de délai
+    // (R-VAL-003 : l'anticipation maximum par type de membre ne borne que la création d'un match,
+    // jamais la consultation).
     private static bool PeutConsulter(Match match, Membre membre) {
         var estImplique = match.OrganisateurMatricule == membre.Matricule
             || match.Participations.Any(p => p.MembreMatricule == membre.Matricule);
