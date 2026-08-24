@@ -105,6 +105,93 @@ public class MatchService : IMatchService {
         return await EnregistrerAsync(match);
     }
 
+    public async Task<List<MatchPublicDto>?> ObtenirMatchsPublicsAsync(string membreMatricule) {
+        var membre = await _membreRepository.GetByMatriculeAsync(membreMatricule);
+        if (membre == null)
+            return null;
+
+        var matchs = await _matchRepository.GetPublicsIncompletsAsync(DateTime.Now);
+
+        // Un membre déjà inscrit (y compris comme organisateur) n'a plus de place à prendre sur
+        // ce match ; tenter de le rejoindre échouerait de toute façon (DejaInscritException).
+        IEnumerable<Match> visibles = matchs.Where(m => m.Participations.All(p => p.MembreMatricule != membreMatricule));
+
+        // R-ACC-002 : un membre de site ne voit que les matchs publics de son site.
+        if (membre.TypeMembre == "SITE") {
+            visibles = visibles.Where(m => m.SiteId == membre.SiteId);
+        }
+        // R-VAL-003 : un membre Libre ne voit que les matchs à 5 jours ou moins de la date du jour.
+        else if (membre.TypeMembre == "LIBRE") {
+            var limite = DateOnly.FromDateTime(DateTime.Today).AddDays(5);
+            visibles = visibles.Where(m => DateOnly.FromDateTime(m.DateHeure) <= limite);
+        }
+        // GLOBAL : aucune restriction de site ni de délai (R-ACC-001).
+
+        return visibles
+            .OrderBy(m => m.DateHeure)
+            .Select(VersMatchPublicDto)
+            .ToList();
+    }
+
+    public async Task<InscriptionResultatDto> RejoindreMatchPublicAsync(int matchId, string membreMatricule) {
+        var membre = await _membreRepository.GetByMatriculeAsync(membreMatricule);
+        if (membre == null)
+            return EchecInscription("Membre introuvable.");
+
+        var match = await _matchRepository.GetByIdAsync(matchId);
+        if (match == null)
+            return EchecInscription("Match introuvable.");
+
+        if (match.Visibilite != "PUBLIC")
+            return EchecInscription("Ce match n'est pas public.");
+
+        if (match.DateHeure <= DateTime.Now)
+            return EchecInscription("Ce match a déjà commencé.");
+
+        // R-ACC-002 : un membre de site ne peut rejoindre que les matchs publics de son site.
+        if (membre.TypeMembre == "SITE" && membre.SiteId != match.SiteId)
+            return EchecInscription("Un membre de site ne peut rejoindre un match public que sur son site de rattachement.");
+
+        // R-VAL-003 : un membre Libre ne peut rejoindre que dans les 5 jours qui précèdent la date.
+        if (membre.TypeMembre == "LIBRE") {
+            var ecart = DateOnly.FromDateTime(match.DateHeure).DayNumber - DateOnly.FromDateTime(DateTime.Today).DayNumber;
+            if (ecart > 5)
+                return EchecInscription("Un membre Libre ne peut rejoindre un match public que dans les 5 jours qui précèdent sa date.");
+        }
+
+        // R-ACC-006 : contrairement à la création, une dette non soldée ne bloque pas
+        // l'inscription — elle est au contraire automatiquement réglée par ce paiement
+        // (EF-bk-018). Idem pour une éventuelle pénalité (R-CALC-004) : elle ne bloque que la
+        // création d'un nouveau match, jamais le fait de rejoindre un match existant.
+        var dette = await _detteRepository.GetNonSoldeeAsync(membre.Matricule);
+
+        try {
+            await _matchRepository.InscrireEtPayerAsync(matchId, membre.Matricule, dette);
+        } catch (MatchCompletException) {
+            return EchecInscription("Ce match est déjà complet ; veuillez réessayer ou choisir un autre match.");
+        } catch (DejaInscritException) {
+            return EchecInscription("Vous êtes déjà inscrit à ce match.");
+        }
+
+        return new InscriptionResultatDto {
+            Succes = true,
+            MontantPaye = MontantParticipation + (dette?.Montant ?? 0.00m),
+            DetteReglee = dette != null
+        };
+    }
+
+    private static InscriptionResultatDto EchecInscription(string message) => new() { Succes = false, MessageErreur = message };
+
+    private static MatchPublicDto VersMatchPublicDto(Match match) => new() {
+        Id = match.Id,
+        SiteId = match.SiteId,
+        NomSite = match.Site.Nom,
+        TerrainId = match.TerrainId,
+        NumeroTerrain = match.Terrain.Numero,
+        DateHeure = match.DateHeure,
+        PlacesRestantes = 4 - match.Participations.Count
+    };
+
     // Validations communes à la création d'un match privé (EF-bk-004) et public (EF-bk-002) :
     // seul l'ajout de joueurs diffère entre les deux (R-ACC-005).
     private async Task<(Membre? Organisateur, DateTime DateHeure, string? Erreur)> ValiderCreationAsync(

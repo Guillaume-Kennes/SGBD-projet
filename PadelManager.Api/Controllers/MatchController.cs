@@ -41,4 +41,22 @@ public class MatchController : ControllerBase {
 
         return Ok(resultat.Match);
     }
+
+    [HttpGet("publics")]
+    public async Task<IActionResult> ObtenirPublics([FromQuery] string membreMatricule) {
+        var matchs = await _matchService.ObtenirMatchsPublicsAsync(membreMatricule);
+        if (matchs == null)
+            return NotFound(new { message = "Membre introuvable." });
+
+        return Ok(matchs);
+    }
+
+    [HttpPost("{id:int}/inscription")]
+    public async Task<IActionResult> Rejoindre(int id, [FromBody] RejoindreMatchRequestDto requete) {
+        var resultat = await _matchService.RejoindreMatchPublicAsync(id, requete.MembreMatricule);
+        if (!resultat.Succes)
+            return BadRequest(new { message = resultat.MessageErreur });
+
+        return Ok(resultat);
+    }
 }

@@ -90,4 +90,53 @@ public class MatchRepositoryTests {
     // exception levée sur un doublon), contrairement à SQL Server. La traduction elle-même est
     // couverte au niveau service (MatchServiceTests, avec le repository mocké) ; le vrai conflit
     // DB est vérifié manuellement via un test HTTP contre SQL Server (cf. plan de vérification).
+
+    [Fact]
+    public async Task GetByIdAsync_MatchExistant_RetourneLeMatch() {
+        // Arrange
+        await using var context = await CreerContexteAvecDonneesDeBaseAsync();
+        context.Matches.Add(new Match { Id = 1, SiteId = 1, TerrainId = 11, DateHeure = new DateTime(2026, 1, 5, 9, 0, 0), Visibilite = "PUBLIC", OrganisateurMatricule = "G0001", Statut = "INCOMPLET" });
+        await context.SaveChangesAsync();
+
+        var repository = new MatchRepository(context);
+
+        // Act
+        var resultat = await repository.GetByIdAsync(1);
+
+        // Assert
+        Assert.NotNull(resultat);
+        Assert.Equal("PUBLIC", resultat!.Visibilite);
+    }
+
+    [Fact]
+    public async Task GetByIdAsync_Inexistant_RetourneNull() {
+        await using var context = await CreerContexteAvecDonneesDeBaseAsync();
+        var repository = new MatchRepository(context);
+
+        var resultat = await repository.GetByIdAsync(999);
+
+        Assert.Null(resultat);
+    }
+
+    [Fact]
+    public async Task GetPublicsIncompletsAsync_FiltreVisibiliteStatutEtDate() {
+        // Arrange
+        await using var context = await CreerContexteAvecDonneesDeBaseAsync();
+        var maintenant = new DateTime(2026, 1, 1, 12, 0, 0);
+        context.Matches.AddRange(
+            new Match { SiteId = 1, TerrainId = 11, DateHeure = maintenant.AddDays(1), Visibilite = "PUBLIC", OrganisateurMatricule = "G0001", Statut = "INCOMPLET" }, // visible
+            new Match { SiteId = 1, TerrainId = 11, DateHeure = maintenant.AddDays(2), Visibilite = "PRIVE", OrganisateurMatricule = "G0001", Statut = "INCOMPLET" }, // privé
+            new Match { SiteId = 1, TerrainId = 11, DateHeure = maintenant.AddDays(3), Visibilite = "PUBLIC", OrganisateurMatricule = "G0001", Statut = "COMPLET" }, // complet
+            new Match { SiteId = 1, TerrainId = 11, DateHeure = maintenant.AddDays(-1), Visibilite = "PUBLIC", OrganisateurMatricule = "G0001", Statut = "INCOMPLET" }); // déjà passé
+        await context.SaveChangesAsync();
+
+        var repository = new MatchRepository(context);
+
+        // Act
+        var resultat = await repository.GetPublicsIncompletsAsync(maintenant);
+
+        // Assert
+        Assert.Single(resultat);
+        Assert.Equal(maintenant.AddDays(1), resultat[0].DateHeure);
+    }
 }

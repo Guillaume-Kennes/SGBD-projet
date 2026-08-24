@@ -36,6 +36,7 @@ public class MatchServiceTests {
         _siteRepoMock.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(new Site { Id = 1, Nom = "Site 1" });
         _terrainRepoMock.Setup(r => r.GetByIdAsync(11)).ReturnsAsync(new Terrain { Id = 11, SiteId = 1, Numero = 1 });
         _detteRepoMock.Setup(r => r.ExisteDetteNonSoldeeAsync(It.IsAny<string>())).ReturnsAsync(false);
+        _detteRepoMock.Setup(r => r.GetNonSoldeeAsync(It.IsAny<string>())).ReturnsAsync((Dette?)null);
         _penaliteRepoMock.Setup(r => r.GetPlusRecenteAsync(It.IsAny<string>())).ReturnsAsync((Penalite?)null);
         _disponibiliteRepoMock.Setup(r => r.ExisteAsync(1, It.IsAny<DateOnly>(), It.IsAny<TimeOnly>())).ReturnsAsync(true);
         _matchRepoMock.Setup(r => r.ExisteAsync(It.IsAny<int>(), It.IsAny<DateTime>())).ReturnsAsync(false);
@@ -461,5 +462,250 @@ public class MatchServiceTests {
         Assert.Equal(3, resultat!.Count);
         Assert.DoesNotContain(resultat, c => c.TerrainId == 11 && c.HeureDebut == new TimeOnly(9, 0));
         Assert.Contains(resultat, c => c.TerrainId == 12 && c.HeureDebut == new TimeOnly(9, 0));
+    }
+
+    // --- ObtenirMatchsPublicsAsync / RejoindreMatchPublicAsync (EF-bk-005/006/007/018) ---
+
+    private static Match MatchPublic(int id, int siteId, DateTime dateHeure, params string[] participants) {
+        var match = new Match {
+            Id = id,
+            SiteId = siteId,
+            TerrainId = 11,
+            DateHeure = dateHeure,
+            Visibilite = "PUBLIC",
+            OrganisateurMatricule = participants.Length > 0 ? participants[0] : "G0001",
+            Statut = "INCOMPLET",
+            Site = new Site { Id = siteId, Nom = $"Site {siteId}" },
+            Terrain = new Terrain { Id = 11, SiteId = siteId, Numero = 1 }
+        };
+        foreach (var p in participants)
+            match.Participations.Add(new Participation { MembreMatricule = p, DateInscription = DateTime.Now });
+        return match;
+    }
+
+    [Fact]
+    public async Task ObtenirMatchsPublicsAsync_MembreInconnu_RetourneNull() {
+        _membreRepoMock.Setup(r => r.GetByMatriculeAsync("XXXX")).ReturnsAsync((Membre?)null);
+
+        var resultat = await _service.ObtenirMatchsPublicsAsync("XXXX");
+
+        Assert.Null(resultat);
+    }
+
+    [Fact]
+    public async Task ObtenirMatchsPublicsAsync_MembreGlobal_VoitTousLesSites() {
+        _matchRepoMock.Setup(r => r.GetPublicsIncompletsAsync(It.IsAny<DateTime>())).ReturnsAsync(new List<Match> {
+            MatchPublic(1, 1, DateTime.Now.AddDays(1), "L00001"),
+            MatchPublic(2, 2, DateTime.Now.AddDays(20), "L00001")
+        });
+
+        var resultat = await _service.ObtenirMatchsPublicsAsync("G0001");
+
+        Assert.NotNull(resultat);
+        Assert.Equal(2, resultat!.Count);
+    }
+
+    [Fact]
+    public async Task ObtenirMatchsPublicsAsync_MembreSite_NeVoitQueSonSite() {
+        _membreRepoMock.Setup(r => r.GetByMatriculeAsync("S00001")).ReturnsAsync(MembreValide("S00001", "SITE", 1, 14));
+        _matchRepoMock.Setup(r => r.GetPublicsIncompletsAsync(It.IsAny<DateTime>())).ReturnsAsync(new List<Match> {
+            MatchPublic(1, 1, DateTime.Now.AddDays(1), "L00001"),
+            MatchPublic(2, 2, DateTime.Now.AddDays(1), "L00001")
+        });
+
+        var resultat = await _service.ObtenirMatchsPublicsAsync("S00001");
+
+        Assert.NotNull(resultat);
+        Assert.Single(resultat!);
+        Assert.Equal(1, resultat![0].SiteId);
+    }
+
+    [Fact]
+    public async Task ObtenirMatchsPublicsAsync_MembreLibre_NeVoitQueLes5ProchainsJours() {
+        _membreRepoMock.Setup(r => r.GetByMatriculeAsync("L00001")).ReturnsAsync(MembreValide("L00001", "LIBRE", null, 5));
+        _matchRepoMock.Setup(r => r.GetPublicsIncompletsAsync(It.IsAny<DateTime>())).ReturnsAsync(new List<Match> {
+            MatchPublic(1, 1, DateTime.Now.AddDays(5), "G0001"),
+            MatchPublic(2, 1, DateTime.Now.AddDays(6), "G0001")
+        });
+
+        var resultat = await _service.ObtenirMatchsPublicsAsync("L00001");
+
+        Assert.NotNull(resultat);
+        Assert.Single(resultat!);
+        Assert.Equal(1, resultat![0].Id);
+    }
+
+    [Fact]
+    public async Task ObtenirMatchsPublicsAsync_MembreDejaInscrit_NeLeVoitPlus() {
+        _matchRepoMock.Setup(r => r.GetPublicsIncompletsAsync(It.IsAny<DateTime>())).ReturnsAsync(new List<Match> {
+            MatchPublic(1, 1, DateTime.Now.AddDays(1), "G0001") // G0001 déjà organisateur/participant
+        });
+
+        var resultat = await _service.ObtenirMatchsPublicsAsync("G0001");
+
+        Assert.NotNull(resultat);
+        Assert.Empty(resultat!);
+    }
+
+    [Fact]
+    public async Task ObtenirMatchsPublicsAsync_CalculeLesPlacesRestantes() {
+        _matchRepoMock.Setup(r => r.GetPublicsIncompletsAsync(It.IsAny<DateTime>())).ReturnsAsync(new List<Match> {
+            MatchPublic(1, 1, DateTime.Now.AddDays(1), "L00001", "L00002")
+        });
+
+        var resultat = await _service.ObtenirMatchsPublicsAsync("G0001");
+
+        Assert.Equal(2, resultat![0].PlacesRestantes);
+    }
+
+    [Fact]
+    public async Task RejoindreMatchPublicAsync_MembreInconnu_RetourneEchec() {
+        _membreRepoMock.Setup(r => r.GetByMatriculeAsync("XXXX")).ReturnsAsync((Membre?)null);
+
+        var resultat = await _service.RejoindreMatchPublicAsync(1, "XXXX");
+
+        Assert.False(resultat.Succes);
+    }
+
+    [Fact]
+    public async Task RejoindreMatchPublicAsync_MatchIntrouvable_RetourneEchec() {
+        _matchRepoMock.Setup(r => r.GetByIdAsync(99)).ReturnsAsync((Match?)null);
+
+        var resultat = await _service.RejoindreMatchPublicAsync(99, "G0001");
+
+        Assert.False(resultat.Succes);
+    }
+
+    [Fact]
+    public async Task RejoindreMatchPublicAsync_MatchPrive_RetourneEchec() {
+        _matchRepoMock.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(
+            new Match { Id = 1, SiteId = 1, TerrainId = 11, DateHeure = DateTime.Now.AddDays(1), Visibilite = "PRIVE", OrganisateurMatricule = "G0001", Statut = "INCOMPLET" });
+
+        var resultat = await _service.RejoindreMatchPublicAsync(1, "L00001");
+
+        Assert.False(resultat.Succes);
+        _matchRepoMock.Verify(r => r.InscrireEtPayerAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<Dette>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task RejoindreMatchPublicAsync_MatchDejaCommence_RetourneEchec() {
+        _matchRepoMock.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(
+            new Match { Id = 1, SiteId = 1, TerrainId = 11, DateHeure = DateTime.Now.AddHours(-1), Visibilite = "PUBLIC", OrganisateurMatricule = "G0001", Statut = "INCOMPLET" });
+
+        var resultat = await _service.RejoindreMatchPublicAsync(1, "L00001");
+
+        Assert.False(resultat.Succes);
+    }
+
+    // R-ACC-002
+    [Fact]
+    public async Task RejoindreMatchPublicAsync_MembreSiteSurUnAutreSite_RetourneEchec() {
+        _membreRepoMock.Setup(r => r.GetByMatriculeAsync("S00003")).ReturnsAsync(MembreValide("S00003", "SITE", 2, 14));
+        _matchRepoMock.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(
+            new Match { Id = 1, SiteId = 1, TerrainId = 11, DateHeure = DateTime.Now.AddDays(1), Visibilite = "PUBLIC", OrganisateurMatricule = "G0001", Statut = "INCOMPLET" });
+
+        var resultat = await _service.RejoindreMatchPublicAsync(1, "S00003");
+
+        Assert.False(resultat.Succes);
+        _matchRepoMock.Verify(r => r.InscrireEtPayerAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<Dette>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task RejoindreMatchPublicAsync_MembreSiteSurSonPropreSite_Autorise() {
+        _membreRepoMock.Setup(r => r.GetByMatriculeAsync("S00001")).ReturnsAsync(MembreValide("S00001", "SITE", 1, 14));
+        _matchRepoMock.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(
+            new Match { Id = 1, SiteId = 1, TerrainId = 11, DateHeure = DateTime.Now.AddDays(30), Visibilite = "PUBLIC", OrganisateurMatricule = "G0001", Statut = "INCOMPLET" });
+
+        var resultat = await _service.RejoindreMatchPublicAsync(1, "S00001");
+
+        // Aucune restriction de délai pour un membre de site qui rejoint (seulement pour organiser).
+        Assert.True(resultat.Succes);
+    }
+
+    // R-VAL-003
+    [Fact]
+    public async Task RejoindreMatchPublicAsync_MembreLibreTropLoin_RetourneEchec() {
+        _membreRepoMock.Setup(r => r.GetByMatriculeAsync("L00001")).ReturnsAsync(MembreValide("L00001", "LIBRE", null, 5));
+        _matchRepoMock.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(
+            new Match { Id = 1, SiteId = 1, TerrainId = 11, DateHeure = DateTime.Now.AddDays(6), Visibilite = "PUBLIC", OrganisateurMatricule = "G0001", Statut = "INCOMPLET" });
+
+        var resultat = await _service.RejoindreMatchPublicAsync(1, "L00001");
+
+        Assert.False(resultat.Succes);
+    }
+
+    [Fact]
+    public async Task RejoindreMatchPublicAsync_MembreLibreDansLaFenetre_Autorise() {
+        _membreRepoMock.Setup(r => r.GetByMatriculeAsync("L00001")).ReturnsAsync(MembreValide("L00001", "LIBRE", null, 5));
+        _matchRepoMock.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(
+            new Match { Id = 1, SiteId = 1, TerrainId = 11, DateHeure = DateTime.Now.AddDays(5), Visibilite = "PUBLIC", OrganisateurMatricule = "G0001", Statut = "INCOMPLET" });
+
+        var resultat = await _service.RejoindreMatchPublicAsync(1, "L00001");
+
+        Assert.True(resultat.Succes);
+    }
+
+    // R-ACC-006 / EF-bk-018 : contrairement à la création, une dette ne bloque pas l'inscription
+    // — elle est réglée automatiquement.
+    [Fact]
+    public async Task RejoindreMatchPublicAsync_DetteActive_NEmpecheJamaisEtEstReglee() {
+        _membreRepoMock.Setup(r => r.GetByMatriculeAsync("G0002")).ReturnsAsync(MembreValide("G0002", "GLOBAL", null, 21));
+        _detteRepoMock.Setup(r => r.GetNonSoldeeAsync("G0002")).ReturnsAsync(new Dette { Id = 7, MembreMatricule = "G0002", MatchOrigineId = 5, Montant = 30.00m, Soldee = false });
+        _matchRepoMock.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(
+            new Match { Id = 1, SiteId = 1, TerrainId = 11, DateHeure = DateTime.Now.AddDays(1), Visibilite = "PUBLIC", OrganisateurMatricule = "G0001", Statut = "INCOMPLET" });
+
+        var resultat = await _service.RejoindreMatchPublicAsync(1, "G0002");
+
+        Assert.True(resultat.Succes);
+        Assert.True(resultat.DetteReglee);
+        Assert.Equal(45.00m, resultat.MontantPaye); // 15€ + 30€ de dette reportée
+        _matchRepoMock.Verify(r => r.InscrireEtPayerAsync(1, "G0002", It.Is<Dette>(d => d.Id == 7)), Times.Once);
+    }
+
+    // R-CALC-004 : une pénalité active ne bloque pas non plus l'inscription (à la différence de
+    // la création, cf. ValiderCreationAsync).
+    [Fact]
+    public async Task RejoindreMatchPublicAsync_PenaliteActive_NEmpechePasLInscription() {
+        _penaliteRepoMock.Setup(r => r.GetPlusRecenteAsync("G0001")).ReturnsAsync(new Penalite { MembreMatricule = "G0001", MatchOrigineId = 1, DelaiJusquAu = Aujourdhui.AddDays(30) });
+        _matchRepoMock.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(
+            new Match { Id = 1, SiteId = 1, TerrainId = 11, DateHeure = DateTime.Now.AddDays(1), Visibilite = "PUBLIC", OrganisateurMatricule = "G0002", Statut = "INCOMPLET" });
+
+        var resultat = await _service.RejoindreMatchPublicAsync(1, "G0001");
+
+        Assert.True(resultat.Succes);
+    }
+
+    [Fact]
+    public async Task RejoindreMatchPublicAsync_MatchComplet_RetourneEchec() {
+        _matchRepoMock.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(
+            new Match { Id = 1, SiteId = 1, TerrainId = 11, DateHeure = DateTime.Now.AddDays(1), Visibilite = "PUBLIC", OrganisateurMatricule = "G0001", Statut = "INCOMPLET" });
+        _matchRepoMock.Setup(r => r.InscrireEtPayerAsync(1, "L00001", It.IsAny<Dette>())).ThrowsAsync(new MatchCompletException());
+
+        var resultat = await _service.RejoindreMatchPublicAsync(1, "L00001");
+
+        Assert.False(resultat.Succes);
+    }
+
+    [Fact]
+    public async Task RejoindreMatchPublicAsync_DejaInscrit_RetourneEchec() {
+        _matchRepoMock.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(
+            new Match { Id = 1, SiteId = 1, TerrainId = 11, DateHeure = DateTime.Now.AddDays(1), Visibilite = "PUBLIC", OrganisateurMatricule = "G0001", Statut = "INCOMPLET" });
+        _matchRepoMock.Setup(r => r.InscrireEtPayerAsync(1, "L00001", It.IsAny<Dette>())).ThrowsAsync(new DejaInscritException());
+
+        var resultat = await _service.RejoindreMatchPublicAsync(1, "L00001");
+
+        Assert.False(resultat.Succes);
+    }
+
+    [Fact]
+    public async Task RejoindreMatchPublicAsync_SansDette_MontantPayeEst15() {
+        _matchRepoMock.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(
+            new Match { Id = 1, SiteId = 1, TerrainId = 11, DateHeure = DateTime.Now.AddDays(1), Visibilite = "PUBLIC", OrganisateurMatricule = "G0002", Statut = "INCOMPLET" });
+
+        var resultat = await _service.RejoindreMatchPublicAsync(1, "G0001");
+
+        Assert.True(resultat.Succes);
+        Assert.False(resultat.DetteReglee);
+        Assert.Equal(15.00m, resultat.MontantPaye);
     }
 }

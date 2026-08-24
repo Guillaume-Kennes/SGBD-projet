@@ -15,4 +15,12 @@ public interface IMatchService {
     // uniquement, sans ajout de joueur (R-ACC-005) — les 3 places restantes sont ouvertes à
     // l'inscription individuelle (EF-bk-006, hors périmètre de cette méthode).
     Task<CreerMatchResultatDto> CreerMatchPublicAsync(CreerMatchPublicRequestDto requete);
+
+    // Matchs publics encore incomplets, filtrés selon la portée du membre (EF-bk-005). Retourne
+    // null si le membre est inconnu.
+    Task<List<MatchPublicDto>?> ObtenirMatchsPublicsAsync(string membreMatricule);
+
+    // Inscription + paiement immédiat d'une place libre (EF-bk-006/007), avec règlement
+    // automatique d'une dette active le cas échéant (EF-bk-018).
+    Task<InscriptionResultatDto> RejoindreMatchPublicAsync(int matchId, string membreMatricule);
 }
