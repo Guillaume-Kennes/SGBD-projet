@@ -18,6 +18,11 @@ public class DisponibiliteRepository : IDisponibiliteRepository {
             .ToListAsync();
     }
 
+    public async Task<bool> ExisteAsync(int siteId, DateOnly date, TimeOnly heureDebut) {
+        return await _context.Disponibilites
+            .AnyAsync(d => d.SiteId == siteId && d.Date == date && d.HeureDebut == heureDebut);
+    }
+
     public async Task RemplacerPourSiteEtAnneeAsync(int siteId, short annee, List<Disponibilite> nouvelles) {
         var existantes = await _context.Disponibilites
             .Where(d => d.SiteId == siteId && d.Date.Year == annee)

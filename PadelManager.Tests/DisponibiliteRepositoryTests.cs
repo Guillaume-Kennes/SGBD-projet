@@ -35,6 +35,22 @@ public class DisponibiliteRepositoryTests {
     }
 
     [Fact]
+    public async Task ExisteAsync_CreneauExistant_RetourneTrue() {
+        // Arrange
+        await using var context = CreerContexteEnMemoire();
+        context.Sites.Add(new Site { Id = 1, Nom = "Site 1" });
+        context.Disponibilites.Add(new Disponibilite { SiteId = 1, Date = new DateOnly(2026, 1, 5), HeureDebut = new TimeOnly(9, 0), HeureFin = new TimeOnly(10, 30) });
+        await context.SaveChangesAsync();
+
+        var repository = new DisponibiliteRepository(context);
+
+        // Act & Assert
+        Assert.True(await repository.ExisteAsync(1, new DateOnly(2026, 1, 5), new TimeOnly(9, 0)));
+        Assert.False(await repository.ExisteAsync(1, new DateOnly(2026, 1, 5), new TimeOnly(10, 45)));
+        Assert.False(await repository.ExisteAsync(2, new DateOnly(2026, 1, 5), new TimeOnly(9, 0)));
+    }
+
+    [Fact]
     public async Task RemplacerPourSiteEtAnneeAsync_SupprimeLExistantEtInsereLesNouvelles() {
         // Arrange
         await using var context = CreerContexteEnMemoire();
