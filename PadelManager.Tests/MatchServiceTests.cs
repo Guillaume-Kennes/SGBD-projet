@@ -31,8 +31,13 @@ public class MatchServiceTests {
             _penaliteRepoMock.Object, _disponibiliteRepoMock.Object, _matchRepoMock.Object);
 
         // Contexte par défaut : organisateur GLOBAL (21j), site 1 / terrain 11 existants, créneau
-        // dans DISPONIBILITE, terrain libre, aucune dette ni pénalité.
+        // dans DISPONIBILITE, terrain libre, aucune dette ni pénalité, 3 joueurs valides prêts à
+        // être invités (RequeteValide() est désormais "valide" au sens strict : un match privé
+        // exige exactement 3 joueurs ajoutés).
         _membreRepoMock.Setup(r => r.GetByMatriculeAsync("G0001")).ReturnsAsync(MembreValide("G0001", "GLOBAL", null, 21));
+        _membreRepoMock.Setup(r => r.GetByMatriculeAsync("L00001")).ReturnsAsync(MembreValide("L00001", "LIBRE", null, 5));
+        _membreRepoMock.Setup(r => r.GetByMatriculeAsync("L00002")).ReturnsAsync(MembreValide("L00002", "LIBRE", null, 5));
+        _membreRepoMock.Setup(r => r.GetByMatriculeAsync("L00003")).ReturnsAsync(MembreValide("L00003", "LIBRE", null, 5));
         _siteRepoMock.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(new Site { Id = 1, Nom = "Site 1" });
         _terrainRepoMock.Setup(r => r.GetByIdAsync(11)).ReturnsAsync(new Terrain { Id = 11, SiteId = 1, Numero = 1 });
         _detteRepoMock.Setup(r => r.ExisteDetteNonSoldeeAsync(It.IsAny<string>())).ReturnsAsync(false);
@@ -56,11 +61,11 @@ public class MatchServiceTests {
         TerrainId = 11,
         Date = Aujourdhui.AddDays(1),
         HeureDebut = new TimeOnly(9, 0),
-        Joueurs = new List<string>()
+        Joueurs = new List<string> { "L00001", "L00002", "L00003" }
     };
 
     [Fact]
-    public async Task CreerMatchPriveAsync_RequeteValide_CreeLeMatchAvecParticipationEtPaiementOrganisateur() {
+    public async Task CreerMatchPriveAsync_RequeteValide_CreeLeMatchAvecParticipationEtPaiementOrganisateurEtTroisJoueurs() {
         // Act
         var resultat = await _service.CreerMatchPriveAsync(RequeteValide());
 
@@ -69,34 +74,17 @@ public class MatchServiceTests {
         Assert.NotNull(resultat.Match);
         Assert.Equal("INCOMPLET", resultat.Match!.Statut);
         Assert.Equal("PRIVE", resultat.Match.Visibilite);
-        Assert.Equal(new[] { "G0001" }, resultat.Match.Joueurs);
+        Assert.Equal(new[] { "G0001", "L00001", "L00002", "L00003" }, resultat.Match.Joueurs);
 
         _matchRepoMock.Verify(r => r.AddAsync(It.Is<Match>(m =>
             m.SiteId == 1 && m.TerrainId == 11 && m.OrganisateurMatricule == "G0001" &&
             m.Statut == "INCOMPLET" && m.Visibilite == "PRIVE" &&
-            m.Participations.Count == 1 &&
-            m.Participations.First().MembreMatricule == "G0001" &&
-            m.Participations.First().Paiement != null &&
-            m.Participations.First().Paiement!.MontantParticipation == 15.00m)), Times.Once);
-    }
-
-    [Fact]
-    public async Task CreerMatchPriveAsync_AvecJoueurs_CreeLeursParticipationsSansPaiement() {
-        // Arrange
-        _membreRepoMock.Setup(r => r.GetByMatriculeAsync("L00001")).ReturnsAsync(MembreValide("L00001", "LIBRE", null, 5));
-        _membreRepoMock.Setup(r => r.GetByMatriculeAsync("S00001")).ReturnsAsync(MembreValide("S00001", "SITE", 1, 14));
-        var requete = RequeteValide();
-        requete.Joueurs = new List<string> { "L00001", "S00001" };
-
-        // Act
-        var resultat = await _service.CreerMatchPriveAsync(requete);
-
-        // Assert
-        Assert.True(resultat.Succes);
-        _matchRepoMock.Verify(r => r.AddAsync(It.Is<Match>(m =>
-            m.Participations.Count == 3 &&
+            m.Participations.Count == 4 &&
+            m.Participations.Single(p => p.MembreMatricule == "G0001").Paiement != null &&
+            m.Participations.Single(p => p.MembreMatricule == "G0001").Paiement!.MontantParticipation == 15.00m &&
             m.Participations.Single(p => p.MembreMatricule == "L00001").Paiement == null &&
-            m.Participations.Single(p => p.MembreMatricule == "S00001").Paiement == null)), Times.Once);
+            m.Participations.Single(p => p.MembreMatricule == "L00002").Paiement == null &&
+            m.Participations.Single(p => p.MembreMatricule == "L00003").Paiement == null)), Times.Once);
     }
 
     [Fact]
@@ -285,11 +273,26 @@ public class MatchServiceTests {
         Assert.False(resultat.Succes);
     }
 
+    // EF-bk-004 : un match privé compte toujours exactement 4 participants (organisateur inclus),
+    // pas moins — le bug initialement rapporté acceptait 1 ou 2 joueurs ajoutés à tort.
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    [InlineData(2)]
+    public async Task CreerMatchPriveAsync_MoinsDeTroisJoueurs_RetourneEchec(int nombreJoueurs) {
+        var requete = RequeteValide();
+        requete.Joueurs = new List<string> { "L00001", "L00002", "L00003" }.Take(nombreJoueurs).ToList();
+
+        var resultat = await _service.CreerMatchPriveAsync(requete);
+
+        Assert.False(resultat.Succes);
+        _matchRepoMock.Verify(r => r.AddAsync(It.IsAny<Match>()), Times.Never);
+    }
+
     [Fact]
     public async Task CreerMatchPriveAsync_JoueurDuplique_RetourneEchec() {
-        _membreRepoMock.Setup(r => r.GetByMatriculeAsync("L00001")).ReturnsAsync(MembreValide("L00001", "LIBRE", null, 5));
         var requete = RequeteValide();
-        requete.Joueurs = new List<string> { "L00001", "L00001" };
+        requete.Joueurs = new List<string> { "L00001", "L00001", "L00002" };
 
         var resultat = await _service.CreerMatchPriveAsync(requete);
 
@@ -300,7 +303,7 @@ public class MatchServiceTests {
     [Fact]
     public async Task CreerMatchPriveAsync_JoueurEstLOrganisateur_RetourneEchec() {
         var requete = RequeteValide();
-        requete.Joueurs = new List<string> { "G0001" };
+        requete.Joueurs = new List<string> { "G0001", "L00001", "L00002" };
 
         var resultat = await _service.CreerMatchPriveAsync(requete);
 
@@ -311,7 +314,7 @@ public class MatchServiceTests {
     public async Task CreerMatchPriveAsync_JoueurIntrouvable_RetourneEchec() {
         _membreRepoMock.Setup(r => r.GetByMatriculeAsync("INCONNU")).ReturnsAsync((Membre?)null);
         var requete = RequeteValide();
-        requete.Joueurs = new List<string> { "INCONNU" };
+        requete.Joueurs = new List<string> { "INCONNU", "L00001", "L00002" };
 
         var resultat = await _service.CreerMatchPriveAsync(requete);
 

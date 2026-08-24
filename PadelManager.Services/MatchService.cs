@@ -6,7 +6,10 @@ namespace PadelManager.Services;
 
 public class MatchService : IMatchService {
     private const decimal MontantParticipation = 15.00m;
-    private const int MaxJoueursAjoutes = 3;
+
+    // R-STR-002 : un match compte toujours exactement 4 participants (organisateur inclus) —
+    // ni moins (place vide non prévue par le CDC pour un match privé), ni plus.
+    private const int NombreJoueursAjoutesRequis = 3;
 
     private readonly ISiteRepository _siteRepository;
     private readonly ITerrainRepository _terrainRepository;
@@ -347,8 +350,8 @@ public class MatchService : IMatchService {
     }
 
     private async Task<string?> ValiderJoueursAsync(List<string> joueurs, string organisateurMatricule) {
-        if (joueurs.Count > MaxJoueursAjoutes)
-            return $"Un match privé ne peut pas compter plus de {MaxJoueursAjoutes} joueurs ajoutés par l'organisateur.";
+        if (joueurs.Count != NombreJoueursAjoutesRequis)
+            return $"Un match privé doit compter exactement {NombreJoueursAjoutesRequis} joueurs ajoutés par l'organisateur (reçu : {joueurs.Count}).";
 
         if (joueurs.Distinct().Count() != joueurs.Count)
             return "Un joueur est ajouté plusieurs fois.";
