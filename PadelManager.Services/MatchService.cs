@@ -180,6 +180,51 @@ public class MatchService : IMatchService {
         };
     }
 
+    public async Task<MontantAPayerDto> ObtenirMontantAPayerAsync(string membreMatricule) {
+        var dette = await _detteRepository.GetNonSoldeeAsync(membreMatricule);
+        return new MontantAPayerDto {
+            MontantParticipation = MontantParticipation,
+            MontantDette = dette?.Montant,
+            MontantTotal = MontantParticipation + (dette?.Montant ?? 0.00m)
+        };
+    }
+
+    public async Task<InscriptionResultatDto> PayerParticipationAsync(int participationId, string membreMatricule) {
+        var membre = await _membreRepository.GetByMatriculeAsync(membreMatricule);
+        if (membre == null)
+            return EchecInscription("Membre introuvable.");
+
+        var participation = await _matchRepository.GetParticipationByIdAsync(participationId);
+        if (participation == null)
+            return EchecInscription("Participation introuvable.");
+
+        if (participation.MembreMatricule != membre.Matricule)
+            return EchecInscription("Vous ne pouvez payer que votre propre participation.");
+
+        if (participation.Paiement != null)
+            return EchecInscription("Cette participation est déjà payée.");
+
+        // R-ACC-006 / R-CALC-004 : ni la dette ni la pénalité ne bloquent le paiement d'une
+        // participation déjà existante — elles ne bloquent que la création d'une nouvelle
+        // réservation. Une dette active est au contraire automatiquement réglée (EF-bk-018),
+        // exactement comme pour l'inscription à un match public. Pas de vérification "match déjà
+        // commencé" non plus : une place non payée reste payable jusqu'au job de bascule
+        // (EF-bk-009), qui seul la libère.
+        var dette = await _detteRepository.GetNonSoldeeAsync(membre.Matricule);
+
+        try {
+            await _matchRepository.PayerParticipationAsync(participation, dette);
+        } catch (ParticipationDejaPayeeException) {
+            return EchecInscription("Cette participation est déjà payée.");
+        }
+
+        return new InscriptionResultatDto {
+            Succes = true,
+            MontantPaye = MontantParticipation + (dette?.Montant ?? 0.00m),
+            DetteReglee = dette != null
+        };
+    }
+
     private static InscriptionResultatDto EchecInscription(string message) => new() { Succes = false, MessageErreur = message };
 
     private static MatchPublicDto VersMatchPublicDto(Match match) => new() {

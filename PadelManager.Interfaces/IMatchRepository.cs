@@ -26,4 +26,13 @@ public interface IMatchRepository {
     // cas de concurrence (ENF-010, R-STR-002). Solde la dette fournie le cas échéant (EF-bk-018)
     // et bascule le match à COMPLET si c'est la 4e participation validée.
     Task<Participation> InscrireEtPayerAsync(int matchId, string membreMatricule, Dette? detteAReporter);
+
+    Task<Participation?> GetParticipationByIdAsync(int id);
+
+    // Valide par paiement une participation déjà existante et non payée (EF-bk-007 : joueur
+    // ajouté à un match privé qui paie sa part en attente). Même verrou que InscrireEtPayerAsync
+    // (sur le MATCH de cette participation) pour déterminer correctement, même en cas de
+    // paiements concurrents par plusieurs joueurs du même match, si c'est la 4e participation
+    // désormais payée (bascule à COMPLET). Solde la dette fournie le cas échéant (EF-bk-018).
+    Task<Participation> PayerParticipationAsync(Participation participation, Dette? detteAReporter);
 }

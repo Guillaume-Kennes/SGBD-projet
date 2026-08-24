@@ -59,4 +59,21 @@ public class MatchController : ControllerBase {
 
         return Ok(resultat);
     }
+
+    [HttpGet("montant-a-payer")]
+    public async Task<IActionResult> ObtenirMontantAPayer([FromQuery] string membreMatricule) {
+        var montant = await _matchService.ObtenirMontantAPayerAsync(membreMatricule);
+        return Ok(montant);
+    }
+
+    // Route absolue : le paiement porte sur une PARTICIPATION, pas un match (EF-bk-007, joueur
+    // ajouté à un match privé qui paie sa part en attente).
+    [HttpPost("/api/participations/{id:int}/paiement")]
+    public async Task<IActionResult> PayerParticipation(int id, [FromBody] PayerParticipationRequestDto requete) {
+        var resultat = await _matchService.PayerParticipationAsync(id, requete.MembreMatricule);
+        if (!resultat.Succes)
+            return BadRequest(new { message = resultat.MessageErreur });
+
+        return Ok(resultat);
+    }
 }

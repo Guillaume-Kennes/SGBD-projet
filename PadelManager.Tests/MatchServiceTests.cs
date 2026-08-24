@@ -708,4 +708,109 @@ public class MatchServiceTests {
         Assert.False(resultat.DetteReglee);
         Assert.Equal(15.00m, resultat.MontantPaye);
     }
+
+    // --- ObtenirMontantAPayerAsync / PayerParticipationAsync (EF-bk-007) ---
+
+    [Fact]
+    public async Task ObtenirMontantAPayerAsync_SansDette_Retourne15() {
+        var resultat = await _service.ObtenirMontantAPayerAsync("G0001");
+
+        Assert.Equal(15.00m, resultat.MontantParticipation);
+        Assert.Null(resultat.MontantDette);
+        Assert.Equal(15.00m, resultat.MontantTotal);
+    }
+
+    [Fact]
+    public async Task ObtenirMontantAPayerAsync_AvecDette_ReporteLeMontant() {
+        _detteRepoMock.Setup(r => r.GetNonSoldeeAsync("G0001")).ReturnsAsync(new Dette { Id = 1, MembreMatricule = "G0001", MatchOrigineId = 1, Montant = 45.00m, Soldee = false });
+
+        var resultat = await _service.ObtenirMontantAPayerAsync("G0001");
+
+        Assert.Equal(15.00m, resultat.MontantParticipation);
+        Assert.Equal(45.00m, resultat.MontantDette);
+        Assert.Equal(60.00m, resultat.MontantTotal);
+    }
+
+    [Fact]
+    public async Task PayerParticipationAsync_MembreInconnu_RetourneEchec() {
+        _membreRepoMock.Setup(r => r.GetByMatriculeAsync("XXXX")).ReturnsAsync((Membre?)null);
+
+        var resultat = await _service.PayerParticipationAsync(1, "XXXX");
+
+        Assert.False(resultat.Succes);
+    }
+
+    [Fact]
+    public async Task PayerParticipationAsync_ParticipationIntrouvable_RetourneEchec() {
+        _matchRepoMock.Setup(r => r.GetParticipationByIdAsync(99)).ReturnsAsync((Participation?)null);
+
+        var resultat = await _service.PayerParticipationAsync(99, "G0001");
+
+        Assert.False(resultat.Succes);
+    }
+
+    [Fact]
+    public async Task PayerParticipationAsync_ParticipationDUnAutreMembre_RetourneEchec() {
+        _matchRepoMock.Setup(r => r.GetParticipationByIdAsync(1)).ReturnsAsync(
+            new Participation { Id = 1, MatchId = 1, MembreMatricule = "L00001", DateInscription = DateTime.Now });
+
+        var resultat = await _service.PayerParticipationAsync(1, "G0001");
+
+        Assert.False(resultat.Succes);
+        _matchRepoMock.Verify(r => r.PayerParticipationAsync(It.IsAny<Participation>(), It.IsAny<Dette>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task PayerParticipationAsync_DejaPayee_RetourneEchec() {
+        _matchRepoMock.Setup(r => r.GetParticipationByIdAsync(1)).ReturnsAsync(
+            new Participation {
+                Id = 1, MatchId = 1, MembreMatricule = "G0001", DateInscription = DateTime.Now,
+                Paiement = new Paiement { MontantParticipation = 15.00m, MontantDetteReportee = 0.00m, DatePaiement = DateTime.Now }
+            });
+
+        var resultat = await _service.PayerParticipationAsync(1, "G0001");
+
+        Assert.False(resultat.Succes);
+        _matchRepoMock.Verify(r => r.PayerParticipationAsync(It.IsAny<Participation>(), It.IsAny<Dette>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task PayerParticipationAsync_RequeteValideSansDette_Retourne15() {
+        var participation = new Participation { Id = 1, MatchId = 1, MembreMatricule = "G0001", DateInscription = DateTime.Now };
+        _matchRepoMock.Setup(r => r.GetParticipationByIdAsync(1)).ReturnsAsync(participation);
+        _matchRepoMock.Setup(r => r.PayerParticipationAsync(participation, null)).ReturnsAsync(participation);
+
+        var resultat = await _service.PayerParticipationAsync(1, "G0001");
+
+        Assert.True(resultat.Succes);
+        Assert.False(resultat.DetteReglee);
+        Assert.Equal(15.00m, resultat.MontantPaye);
+    }
+
+    // EF-bk-018 : une dette active est réglée automatiquement, comme pour l'inscription publique.
+    [Fact]
+    public async Task PayerParticipationAsync_AvecDette_LaRegleEtReporteLeMontant() {
+        var participation = new Participation { Id = 1, MatchId = 1, MembreMatricule = "G0001", DateInscription = DateTime.Now };
+        var dette = new Dette { Id = 7, MembreMatricule = "G0001", MatchOrigineId = 5, Montant = 45.00m, Soldee = false };
+        _matchRepoMock.Setup(r => r.GetParticipationByIdAsync(1)).ReturnsAsync(participation);
+        _detteRepoMock.Setup(r => r.GetNonSoldeeAsync("G0001")).ReturnsAsync(dette);
+        _matchRepoMock.Setup(r => r.PayerParticipationAsync(participation, dette)).ReturnsAsync(participation);
+
+        var resultat = await _service.PayerParticipationAsync(1, "G0001");
+
+        Assert.True(resultat.Succes);
+        Assert.True(resultat.DetteReglee);
+        Assert.Equal(60.00m, resultat.MontantPaye);
+    }
+
+    [Fact]
+    public async Task PayerParticipationAsync_ConflitConcurrent_RetourneEchec() {
+        var participation = new Participation { Id = 1, MatchId = 1, MembreMatricule = "G0001", DateInscription = DateTime.Now };
+        _matchRepoMock.Setup(r => r.GetParticipationByIdAsync(1)).ReturnsAsync(participation);
+        _matchRepoMock.Setup(r => r.PayerParticipationAsync(participation, null)).ThrowsAsync(new ParticipationDejaPayeeException());
+
+        var resultat = await _service.PayerParticipationAsync(1, "G0001");
+
+        Assert.False(resultat.Succes);
+    }
 }

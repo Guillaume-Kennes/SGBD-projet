@@ -139,4 +139,58 @@ public class MatchRepositoryTests {
         Assert.Single(resultat);
         Assert.Equal(maintenant.AddDays(1), resultat[0].DateHeure);
     }
+
+    [Fact]
+    public async Task GetParticipationByIdAsync_ParticipationExistante_RetourneAvecPaiement() {
+        // Arrange
+        await using var context = await CreerContexteAvecDonneesDeBaseAsync();
+        context.Matches.Add(new Match { Id = 1, SiteId = 1, TerrainId = 11, DateHeure = new DateTime(2026, 1, 5, 9, 0, 0), Visibilite = "PRIVE", OrganisateurMatricule = "G0001", Statut = "INCOMPLET" });
+        context.Participations.Add(new Participation {
+            Id = 1, MatchId = 1, MembreMatricule = "G0001", DateInscription = DateTime.Now,
+            Paiement = new Paiement { MontantParticipation = 15.00m, MontantDetteReportee = 0.00m, DatePaiement = DateTime.Now }
+        });
+        await context.SaveChangesAsync();
+
+        var repository = new MatchRepository(context);
+
+        // Act
+        var resultat = await repository.GetParticipationByIdAsync(1);
+
+        // Assert
+        Assert.NotNull(resultat);
+        Assert.NotNull(resultat!.Paiement);
+    }
+
+    [Fact]
+    public async Task GetParticipationByIdAsync_EnAttente_RetourneSansPaiement() {
+        // Arrange
+        await using var context = await CreerContexteAvecDonneesDeBaseAsync();
+        context.Matches.Add(new Match { Id = 1, SiteId = 1, TerrainId = 11, DateHeure = new DateTime(2026, 1, 5, 9, 0, 0), Visibilite = "PRIVE", OrganisateurMatricule = "G0001", Statut = "INCOMPLET" });
+        context.Participations.Add(new Participation { Id = 1, MatchId = 1, MembreMatricule = "L00001", DateInscription = DateTime.Now });
+        await context.SaveChangesAsync();
+
+        var repository = new MatchRepository(context);
+
+        // Act
+        var resultat = await repository.GetParticipationByIdAsync(1);
+
+        // Assert
+        Assert.NotNull(resultat);
+        Assert.Null(resultat!.Paiement);
+    }
+
+    [Fact]
+    public async Task GetParticipationByIdAsync_Inexistante_RetourneNull() {
+        await using var context = await CreerContexteAvecDonneesDeBaseAsync();
+        var repository = new MatchRepository(context);
+
+        var resultat = await repository.GetParticipationByIdAsync(999);
+
+        Assert.Null(resultat);
+    }
+
+    // Pas de test InMemory pour PayerParticipationAsync : comme InscrireEtPayerAsync, il commence
+    // par un SELECT ... WITH (UPDLOCK, HOLDLOCK) (FromSqlInterpolated), non supporté par le
+    // provider InMemory (relationnel uniquement). Couvert par MatchServiceTests (repository
+    // mocké) et vérifié en HTTP réel contre SQL Server.
 }
