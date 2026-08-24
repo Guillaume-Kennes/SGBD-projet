@@ -75,6 +75,15 @@ public class InscriptionResultat {
     public bool DetteReglee { get; set; }
 }
 
+// Montant à afficher AVANT paiement (15€, + dette active éventuelle). Toujours récupéré à
+// nouveau au chargement de l'écran plutôt que mis en cache depuis ConnexionResultat : une dette
+// peut être réglée par une autre action en cours de session, un montant caché deviendrait faux.
+public class MontantAPayerResultat {
+    public decimal MontantParticipation { get; set; }
+    public decimal? MontantDette { get; set; }
+    public decimal MontantTotal { get; set; }
+}
+
 public class MatchResultat {
     public int Id { get; set; }
     public int SiteId { get; set; }
@@ -192,6 +201,15 @@ public class ApiClient {
 
         var inscription = await response.Content.ReadFromJsonAsync<InscriptionResultat>();
         return new ApiResult<InscriptionResultat> { Succes = true, Data = inscription };
+    }
+
+    public async Task<MontantAPayerResultat?> ObtenirMontantAPayerAsync(string membreMatricule) {
+        var response = await _httpClient.GetAsync($"api/matchs/montant-a-payer?membreMatricule={Uri.EscapeDataString(membreMatricule)}");
+
+        if (!response.IsSuccessStatusCode)
+            return null;
+
+        return await response.Content.ReadFromJsonAsync<MontantAPayerResultat>();
     }
 
     private static async Task<string?> LireMessageErreurAsync(HttpResponseMessage response) {

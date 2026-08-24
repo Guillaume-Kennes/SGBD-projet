@@ -34,6 +34,7 @@ namespace PadelManager.WinForms
             colPlacesRestantes = new DataGridViewTextBoxColumn();
             btnRafraichir = new Button();
             btnRejoindre = new Button();
+            lblMontant = new Label();
             lblMessage = new Label();
             ((System.ComponentModel.ISupportInitialize)grdMatchs).BeginInit();
             SuspendLayout();
@@ -102,6 +103,15 @@ namespace PadelManager.WinForms
             btnRejoindre.UseVisualStyleBackColor = true;
             btnRejoindre.Click += btnRejoindre_Click;
             //
+            // lblMontant
+            //
+            lblMontant.AutoSize = true;
+            lblMontant.Location = new Point(410, 341);
+            lblMontant.MaximumSize = new Size(400, 0);
+            lblMontant.Name = "lblMontant";
+            lblMontant.Size = new Size(0, 20);
+            lblMontant.TabIndex = 3;
+            //
             // lblMessage
             //
             lblMessage.AutoSize = true;
@@ -109,7 +119,7 @@ namespace PadelManager.WinForms
             lblMessage.MaximumSize = new Size(600, 0);
             lblMessage.Name = "lblMessage";
             lblMessage.Size = new Size(0, 20);
-            lblMessage.TabIndex = 3;
+            lblMessage.TabIndex = 4;
             //
             // MatchsPublicsForm
             //
@@ -117,6 +127,7 @@ namespace PadelManager.WinForms
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(640, 430);
             Controls.Add(lblMessage);
+            Controls.Add(lblMontant);
             Controls.Add(btnRejoindre);
             Controls.Add(btnRafraichir);
             Controls.Add(grdMatchs);
@@ -137,6 +148,7 @@ namespace PadelManager.WinForms
         private DataGridViewTextBoxColumn colPlacesRestantes;
         private Button btnRafraichir;
         private Button btnRejoindre;
+        private Label lblMontant;
         private Label lblMessage;
     }
 }

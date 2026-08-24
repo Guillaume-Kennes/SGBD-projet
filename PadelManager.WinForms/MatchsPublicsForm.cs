@@ -42,11 +42,30 @@ namespace PadelManager.WinForms
                 lblMessage.Text = _matchs.Count == 0
                     ? "Aucun match public disponible pour l'instant."
                     : $"{_matchs.Count} match(s) public(s) disponible(s).";
+
+                await ChargerMontantAPayerAsync();
             } catch (HttpRequestException) {
                 lblMessage.Text = "Impossible de contacter le serveur. Vérifiez que l'API est lancée.";
             } finally {
                 btnRafraichir.Enabled = true;
             }
+        }
+
+        // Montant affiché à côté du bouton "Rejoindre et payer 15€" : toujours recalculé côté
+        // serveur à chaque chargement (jamais mis en cache depuis ConnexionResultat), une dette
+        // pouvant être réglée entre-temps par une autre action. Une dette active ne bloque pas
+        // l'inscription (R-ACC-006 ne bloque que la création), elle s'ajoute simplement au
+        // montant à payer.
+        private async Task ChargerMontantAPayerAsync() {
+            var montant = await _apiClient.ObtenirMontantAPayerAsync(_connexion.Matricule);
+            if (montant == null) {
+                lblMontant.Text = "";
+                return;
+            }
+
+            lblMontant.Text = montant.MontantDette is > 0
+                ? $"{montant.MontantParticipation:0.00}€ + {montant.MontantDette:0.00}€ de dette = {montant.MontantTotal:0.00}€"
+                : $"{montant.MontantParticipation:0.00}€";
         }
 
         private async void btnRejoindre_Click(object sender, EventArgs e) {
