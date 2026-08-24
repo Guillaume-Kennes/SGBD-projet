@@ -19,5 +19,10 @@ namespace PadelManager.WinForms
             using var form = new CreerMatchForm(_connexion);
             form.ShowDialog();
         }
+
+        private void btnCreerMatchPublic_Click(object sender, EventArgs e) {
+            using var form = new CreerMatchPublicForm(_connexion);
+            form.ShowDialog();
+        }
     }
 }

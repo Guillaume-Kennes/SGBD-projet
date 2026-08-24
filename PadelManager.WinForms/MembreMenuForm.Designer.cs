@@ -29,6 +29,7 @@ namespace PadelManager.WinForms
         private void InitializeComponent() {
             lblConnecte = new Label();
             btnCreerMatch = new Button();
+            btnCreerMatchPublic = new Button();
             SuspendLayout();
             //
             // lblConnecte
@@ -49,11 +50,22 @@ namespace PadelManager.WinForms
             btnCreerMatch.UseVisualStyleBackColor = true;
             btnCreerMatch.Click += btnCreerMatch_Click;
             //
+            // btnCreerMatchPublic
+            //
+            btnCreerMatchPublic.Location = new Point(20, 115);
+            btnCreerMatchPublic.Name = "btnCreerMatchPublic";
+            btnCreerMatchPublic.Size = new Size(280, 34);
+            btnCreerMatchPublic.TabIndex = 2;
+            btnCreerMatchPublic.Text = "Créer un match public";
+            btnCreerMatchPublic.UseVisualStyleBackColor = true;
+            btnCreerMatchPublic.Click += btnCreerMatchPublic_Click;
+            //
             // MembreMenuForm
             //
             AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(340, 140);
+            ClientSize = new Size(340, 185);
+            Controls.Add(btnCreerMatchPublic);
             Controls.Add(btnCreerMatch);
             Controls.Add(lblConnecte);
             Name = "MembreMenuForm";
@@ -66,5 +78,6 @@ namespace PadelManager.WinForms
 
         private Label lblConnecte;
         private Button btnCreerMatch;
+        private Button btnCreerMatchPublic;
     }
 }

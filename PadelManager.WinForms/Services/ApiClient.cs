@@ -46,6 +46,14 @@ public class CreerMatchPriveRequete {
     public List<string> Joueurs { get; set; } = new();
 }
 
+public class CreerMatchPublicRequete {
+    public string OrganisateurMatricule { get; set; } = null!;
+    public int SiteId { get; set; }
+    public int TerrainId { get; set; }
+    public DateOnly Date { get; set; }
+    public TimeOnly HeureDebut { get; set; }
+}
+
 public class MatchResultat {
     public int Id { get; set; }
     public int SiteId { get; set; }
@@ -121,6 +129,18 @@ public class ApiClient {
 
     public async Task<ApiResult<MatchResultat>> CreerMatchPriveAsync(CreerMatchPriveRequete requete) {
         var response = await _httpClient.PostAsJsonAsync("api/matchs", requete);
+
+        if (!response.IsSuccessStatusCode) {
+            var message = await LireMessageErreurAsync(response);
+            return new ApiResult<MatchResultat> { Succes = false, Message = message };
+        }
+
+        var match = await response.Content.ReadFromJsonAsync<MatchResultat>();
+        return new ApiResult<MatchResultat> { Succes = true, Data = match };
+    }
+
+    public async Task<ApiResult<MatchResultat>> CreerMatchPublicAsync(CreerMatchPublicRequete requete) {
+        var response = await _httpClient.PostAsJsonAsync("api/matchs/publics", requete);
 
         if (!response.IsSuccessStatusCode) {
             var message = await LireMessageErreurAsync(response);
