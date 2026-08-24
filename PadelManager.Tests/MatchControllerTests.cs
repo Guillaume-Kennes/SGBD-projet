@@ -195,4 +195,30 @@ public class MatchControllerTests {
         // Assert
         Assert.IsType<BadRequestObjectResult>(resultat);
     }
+
+    [Fact]
+    public async Task ObtenirParticipationsEnAttente_MembreConnu_RetourneOk() {
+        // Arrange
+        var participations = new List<ParticipationEnAttenteDto> { new() { ParticipationId = 10, MatchId = 1, SiteId = 1, NomSite = "Site 1", TerrainId = 11, NumeroTerrain = 3, DateHeure = new DateTime(2026, 1, 5, 9, 0, 0), OrganisateurMatricule = "S00001" } };
+        _serviceMock.Setup(s => s.ObtenirParticipationsEnAttenteAsync("G0001")).ReturnsAsync(participations);
+
+        // Act
+        var resultat = await _controller.ObtenirParticipationsEnAttente("G0001");
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(resultat);
+        Assert.Equal(participations, okResult.Value);
+    }
+
+    [Fact]
+    public async Task ObtenirParticipationsEnAttente_MembreInconnu_RetourneNotFound() {
+        // Arrange
+        _serviceMock.Setup(s => s.ObtenirParticipationsEnAttenteAsync("XXXX")).ReturnsAsync((List<ParticipationEnAttenteDto>?)null);
+
+        // Act
+        var resultat = await _controller.ObtenirParticipationsEnAttente("XXXX");
+
+        // Assert
+        Assert.IsType<NotFoundObjectResult>(resultat);
+    }
 }

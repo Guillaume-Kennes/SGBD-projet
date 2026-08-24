@@ -225,6 +225,28 @@ public class MatchService : IMatchService {
         };
     }
 
+    public async Task<List<ParticipationEnAttenteDto>?> ObtenirParticipationsEnAttenteAsync(string membreMatricule) {
+        var membre = await _membreRepository.GetByMatriculeAsync(membreMatricule);
+        if (membre == null)
+            return null;
+
+        var participations = await _matchRepository.GetParticipationsEnAttenteAsync(membreMatricule);
+
+        return participations
+            .OrderBy(p => p.Match.DateHeure)
+            .Select(p => new ParticipationEnAttenteDto {
+                ParticipationId = p.Id,
+                MatchId = p.MatchId,
+                SiteId = p.Match.SiteId,
+                NomSite = p.Match.Site.Nom,
+                TerrainId = p.Match.TerrainId,
+                NumeroTerrain = p.Match.Terrain.Numero,
+                DateHeure = p.Match.DateHeure,
+                OrganisateurMatricule = p.Match.OrganisateurMatricule
+            })
+            .ToList();
+    }
+
     private static InscriptionResultatDto EchecInscription(string message) => new() { Succes = false, MessageErreur = message };
 
     private static MatchPublicDto VersMatchPublicDto(Match match) => new() {

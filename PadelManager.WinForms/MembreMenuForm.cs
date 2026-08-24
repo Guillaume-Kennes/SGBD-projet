@@ -29,5 +29,10 @@ namespace PadelManager.WinForms
             using var form = new MatchsPublicsForm(_connexion);
             form.ShowDialog();
         }
+
+        private void btnParticipationsEnAttente_Click(object sender, EventArgs e) {
+            using var form = new ParticipationsEnAttenteForm(_connexion);
+            form.ShowDialog();
+        }
     }
 }

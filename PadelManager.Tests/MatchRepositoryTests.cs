@@ -193,4 +193,27 @@ public class MatchRepositoryTests {
     // par un SELECT ... WITH (UPDLOCK, HOLDLOCK) (FromSqlInterpolated), non supporté par le
     // provider InMemory (relationnel uniquement). Couvert par MatchServiceTests (repository
     // mocké) et vérifié en HTTP réel contre SQL Server.
+
+    [Fact]
+    public async Task GetParticipationsEnAttenteAsync_NeRetourneQueLesParticipationsNonPayeesDuMembre() {
+        // Arrange
+        await using var context = await CreerContexteAvecDonneesDeBaseAsync();
+        context.Membres.Add(new Membre { Matricule = "L00001", TypeMembre = "LIBRE" });
+        context.Matches.Add(new Match { Id = 1, SiteId = 1, TerrainId = 11, DateHeure = new DateTime(2026, 1, 5, 9, 0, 0), Visibilite = "PRIVE", OrganisateurMatricule = "G0001", Statut = "INCOMPLET" });
+        context.Participations.AddRange(
+            new Participation { Id = 1, MatchId = 1, MembreMatricule = "L00001", DateInscription = DateTime.Now }, // en attente, du bon membre
+            new Participation { Id = 2, MatchId = 1, MembreMatricule = "L00001", DateInscription = DateTime.Now, Paiement = new Paiement { MontantParticipation = 15.00m, MontantDetteReportee = 0.00m, DatePaiement = DateTime.Now } }, // déjà payée
+            new Participation { Id = 3, MatchId = 1, MembreMatricule = "G0001", DateInscription = DateTime.Now }); // en attente, d'un autre membre
+        await context.SaveChangesAsync();
+
+        var repository = new MatchRepository(context);
+
+        // Act
+        var resultat = await repository.GetParticipationsEnAttenteAsync("L00001");
+
+        // Assert
+        Assert.Single(resultat);
+        Assert.Equal(1, resultat[0].Id);
+        Assert.Equal("Site 1", resultat[0].Match.Site.Nom);
+    }
 }

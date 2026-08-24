@@ -813,4 +813,36 @@ public class MatchServiceTests {
 
         Assert.False(resultat.Succes);
     }
+
+    [Fact]
+    public async Task ObtenirParticipationsEnAttenteAsync_MembreInconnu_RetourneNull() {
+        _membreRepoMock.Setup(r => r.GetByMatriculeAsync("XXXX")).ReturnsAsync((Membre?)null);
+
+        var resultat = await _service.ObtenirParticipationsEnAttenteAsync("XXXX");
+
+        Assert.Null(resultat);
+    }
+
+    [Fact]
+    public async Task ObtenirParticipationsEnAttenteAsync_MembreConnu_RetourneLesParticipationsTrieesParDate() {
+        var site = new Site { Id = 1, Nom = "Site 1" };
+        var terrain = new Terrain { Id = 11, SiteId = 1, Numero = 3 };
+        var matchProche = new Match { Id = 1, SiteId = 1, TerrainId = 11, DateHeure = DateTime.Today.AddDays(2), Visibilite = "PRIVE", OrganisateurMatricule = "S00001", Statut = "INCOMPLET", Site = site, Terrain = terrain };
+        var matchLointain = new Match { Id = 2, SiteId = 1, TerrainId = 11, DateHeure = DateTime.Today.AddDays(5), Visibilite = "PRIVE", OrganisateurMatricule = "S00002", Statut = "INCOMPLET", Site = site, Terrain = terrain };
+        var participations = new List<Participation> {
+            new() { Id = 20, MatchId = 2, MembreMatricule = "G0001", DateInscription = DateTime.Now, Match = matchLointain },
+            new() { Id = 10, MatchId = 1, MembreMatricule = "G0001", DateInscription = DateTime.Now, Match = matchProche }
+        };
+        _matchRepoMock.Setup(r => r.GetParticipationsEnAttenteAsync("G0001")).ReturnsAsync(participations);
+
+        var resultat = await _service.ObtenirParticipationsEnAttenteAsync("G0001");
+
+        Assert.NotNull(resultat);
+        Assert.Equal(2, resultat!.Count);
+        Assert.Equal(10, resultat[0].ParticipationId);
+        Assert.Equal("Site 1", resultat[0].NomSite);
+        Assert.Equal(3, resultat[0].NumeroTerrain);
+        Assert.Equal("S00001", resultat[0].OrganisateurMatricule);
+        Assert.Equal(20, resultat[1].ParticipationId);
+    }
 }

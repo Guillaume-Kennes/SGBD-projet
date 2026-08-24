@@ -35,4 +35,8 @@ public interface IMatchRepository {
     // paiements concurrents par plusieurs joueurs du même match, si c'est la 4e participation
     // désormais payée (bascule à COMPLET). Solde la dette fournie le cas échéant (EF-bk-018).
     Task<Participation> PayerParticipationAsync(Participation participation, Dette? detteAReporter);
+
+    // Participations d'un membre encore en attente de paiement (EF-bk-007 : ajouté par un
+    // organisateur à un match privé), Match/Site/Terrain inclus pour l'affichage.
+    Task<List<Participation>> GetParticipationsEnAttenteAsync(string membreMatricule);
 }

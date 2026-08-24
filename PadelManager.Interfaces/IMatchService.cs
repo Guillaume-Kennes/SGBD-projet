@@ -33,4 +33,8 @@ public interface IMatchService {
     // match privé par l'organisateur, R-VAL-005). Règlement automatique d'une dette active le cas
     // échéant (EF-bk-018), comme pour l'inscription à un match public.
     Task<InscriptionResultatDto> PayerParticipationAsync(int participationId, string membreMatricule);
+
+    // Participations d'un membre en attente de paiement, tous matchs privés confondus (EF-bk-007),
+    // pour l'écran où il valide sa place en payant. Retourne null si le membre est inconnu.
+    Task<List<ParticipationEnAttenteDto>?> ObtenirParticipationsEnAttenteAsync(string membreMatricule);
 }

@@ -76,4 +76,14 @@ public class MatchController : ControllerBase {
 
         return Ok(resultat);
     }
+
+    // Route absolue, comme la précédente : porte sur des PARTICIPATION, pas des MATCH.
+    [HttpGet("/api/participations/en-attente")]
+    public async Task<IActionResult> ObtenirParticipationsEnAttente([FromQuery] string membreMatricule) {
+        var participations = await _matchService.ObtenirParticipationsEnAttenteAsync(membreMatricule);
+        if (participations == null)
+            return NotFound(new { message = "Membre introuvable." });
+
+        return Ok(participations);
+    }
 }

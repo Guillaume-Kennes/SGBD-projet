@@ -134,6 +134,14 @@ public class MatchRepository : IMatchRepository {
         }
     }
 
+    public async Task<List<Participation>> GetParticipationsEnAttenteAsync(string membreMatricule) {
+        return await _context.Participations
+            .Include(p => p.Match).ThenInclude(m => m.Site)
+            .Include(p => p.Match).ThenInclude(m => m.Terrain)
+            .Where(p => p.MembreMatricule == membreMatricule && p.Paiement == null)
+            .ToListAsync();
+    }
+
     // Verrouille la ligne MATCH pour toute la durée de la transaction : sérialise les écritures
     // concurrentes de participations sur ce même match, empêchant de dépasser 4 participations
     // payées même en cas de double clic / requêtes simultanées (ENF-010, R-STR-002) — même

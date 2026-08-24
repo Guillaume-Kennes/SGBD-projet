@@ -84,6 +84,23 @@ public class MontantAPayerResultat {
     public decimal MontantTotal { get; set; }
 }
 
+public class PayerParticipationRequete {
+    public string MembreMatricule { get; set; } = null!;
+}
+
+// Participation à un match privé en attente de paiement : le membre y a été ajouté par
+// l'organisateur à la création, sa place n'est confirmée qu'une fois payée (EF-bk-007).
+public class ParticipationEnAttenteResultat {
+    public int ParticipationId { get; set; }
+    public int MatchId { get; set; }
+    public int SiteId { get; set; }
+    public string NomSite { get; set; } = null!;
+    public int TerrainId { get; set; }
+    public int NumeroTerrain { get; set; }
+    public DateTime DateHeure { get; set; }
+    public string OrganisateurMatricule { get; set; } = null!;
+}
+
 public class MatchResultat {
     public int Id { get; set; }
     public int SiteId { get; set; }
@@ -210,6 +227,28 @@ public class ApiClient {
             return null;
 
         return await response.Content.ReadFromJsonAsync<MontantAPayerResultat>();
+    }
+
+    public async Task<List<ParticipationEnAttenteResultat>?> ObtenirParticipationsEnAttenteAsync(string membreMatricule) {
+        var response = await _httpClient.GetAsync($"api/participations/en-attente?membreMatricule={Uri.EscapeDataString(membreMatricule)}");
+
+        if (!response.IsSuccessStatusCode)
+            return null;
+
+        return await response.Content.ReadFromJsonAsync<List<ParticipationEnAttenteResultat>>();
+    }
+
+    public async Task<ApiResult<InscriptionResultat>> PayerParticipationAsync(int participationId, string membreMatricule) {
+        var requete = new PayerParticipationRequete { MembreMatricule = membreMatricule };
+        var response = await _httpClient.PostAsJsonAsync($"api/participations/{participationId}/paiement", requete);
+
+        if (!response.IsSuccessStatusCode) {
+            var message = await LireMessageErreurAsync(response);
+            return new ApiResult<InscriptionResultat> { Succes = false, Message = message };
+        }
+
+        var inscription = await response.Content.ReadFromJsonAsync<InscriptionResultat>();
+        return new ApiResult<InscriptionResultat> { Succes = true, Data = inscription };
     }
 
     private static async Task<string?> LireMessageErreurAsync(HttpResponseMessage response) {
