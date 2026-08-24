@@ -10,4 +10,9 @@ public interface IMatchService {
     // Création d'un match privé (EF-bk-004) : organisateur + jusqu'à 3 joueurs + paiement
     // immédiat de l'organisateur, en une seule opération (R-VAL-005).
     Task<CreerMatchResultatDto> CreerMatchPriveAsync(CreerMatchPriveRequestDto requete);
+
+    // Création directe d'un match public (EF-bk-002) : organisateur + paiement immédiat
+    // uniquement, sans ajout de joueur (R-ACC-005) — les 3 places restantes sont ouvertes à
+    // l'inscription individuelle (EF-bk-006, hors périmètre de cette méthode).
+    Task<CreerMatchResultatDto> CreerMatchPublicAsync(CreerMatchPublicRequestDto requete);
 }

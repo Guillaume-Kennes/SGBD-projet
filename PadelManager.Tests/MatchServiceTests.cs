@@ -317,6 +317,117 @@ public class MatchServiceTests {
         Assert.False(resultat.Succes);
     }
 
+    // --- CreerMatchPublicAsync (EF-bk-002) ---
+
+    private static CreerMatchPublicRequestDto RequeteValidePublic() => new() {
+        OrganisateurMatricule = "G0001",
+        SiteId = 1,
+        TerrainId = 11,
+        Date = Aujourdhui.AddDays(1),
+        HeureDebut = new TimeOnly(9, 0)
+    };
+
+    [Fact]
+    public async Task CreerMatchPublicAsync_RequeteValide_CreeLeMatchAvecSeuleLaParticipationDeLOrganisateur() {
+        // Act
+        var resultat = await _service.CreerMatchPublicAsync(RequeteValidePublic());
+
+        // Assert
+        Assert.True(resultat.Succes);
+        Assert.NotNull(resultat.Match);
+        Assert.Equal("PUBLIC", resultat.Match!.Visibilite);
+        Assert.Equal("INCOMPLET", resultat.Match.Statut);
+        Assert.Equal(new[] { "G0001" }, resultat.Match.Joueurs);
+
+        _matchRepoMock.Verify(r => r.AddAsync(It.Is<Match>(m =>
+            m.Visibilite == "PUBLIC" && m.OrganisateurMatricule == "G0001" &&
+            m.Participations.Count == 1 &&
+            m.Participations.First().Paiement != null &&
+            m.Participations.First().Paiement!.MontantParticipation == 15.00m)), Times.Once);
+    }
+
+    // R-ACC-005 : aucun joueur ajoutable à la création d'un match public (à la différence de
+    // CreerMatchPriveAsync, la requête n'a même pas de champ Joueurs).
+    [Fact]
+    public async Task CreerMatchPublicAsync_OrganisateurIntrouvable_RetourneEchec() {
+        _membreRepoMock.Setup(r => r.GetByMatriculeAsync("XXXX")).ReturnsAsync((Membre?)null);
+        var requete = RequeteValidePublic();
+        requete.OrganisateurMatricule = "XXXX";
+
+        var resultat = await _service.CreerMatchPublicAsync(requete);
+
+        Assert.False(resultat.Succes);
+        _matchRepoMock.Verify(r => r.AddAsync(It.IsAny<Match>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task CreerMatchPublicAsync_MembreSiteSurUnAutreSite_RetourneEchec() {
+        _membreRepoMock.Setup(r => r.GetByMatriculeAsync("S00003")).ReturnsAsync(MembreValide("S00003", "SITE", 2, 14));
+        var requete = RequeteValidePublic();
+        requete.OrganisateurMatricule = "S00003";
+
+        var resultat = await _service.CreerMatchPublicAsync(requete);
+
+        Assert.False(resultat.Succes);
+    }
+
+    [Fact]
+    public async Task CreerMatchPublicAsync_DetteNonSoldee_RetourneEchec() {
+        _detteRepoMock.Setup(r => r.ExisteDetteNonSoldeeAsync("G0001")).ReturnsAsync(true);
+
+        var resultat = await _service.CreerMatchPublicAsync(RequeteValidePublic());
+
+        Assert.False(resultat.Succes);
+    }
+
+    [Fact]
+    public async Task CreerMatchPublicAsync_PenaliteActive_RetourneEchec() {
+        _penaliteRepoMock.Setup(r => r.GetPlusRecenteAsync("G0001"))
+            .ReturnsAsync(new Penalite { MembreMatricule = "G0001", MatchOrigineId = 1, DelaiJusquAu = Aujourdhui.AddDays(7) });
+
+        var resultat = await _service.CreerMatchPublicAsync(RequeteValidePublic());
+
+        Assert.False(resultat.Succes);
+    }
+
+    [Fact]
+    public async Task CreerMatchPublicAsync_DateTropLointaine_RetourneEchec() {
+        var requete = RequeteValidePublic();
+        requete.Date = Aujourdhui.AddDays(22); // > 21j pour un membre GLOBAL
+
+        var resultat = await _service.CreerMatchPublicAsync(requete);
+
+        Assert.False(resultat.Succes);
+    }
+
+    [Fact]
+    public async Task CreerMatchPublicAsync_CreneauHorsDisponibilite_RetourneEchec() {
+        _disponibiliteRepoMock.Setup(r => r.ExisteAsync(1, It.IsAny<DateOnly>(), It.IsAny<TimeOnly>())).ReturnsAsync(false);
+
+        var resultat = await _service.CreerMatchPublicAsync(RequeteValidePublic());
+
+        Assert.False(resultat.Succes);
+    }
+
+    [Fact]
+    public async Task CreerMatchPublicAsync_TerrainDejaPris_RetourneEchec() {
+        _matchRepoMock.Setup(r => r.ExisteAsync(11, It.IsAny<DateTime>())).ReturnsAsync(true);
+
+        var resultat = await _service.CreerMatchPublicAsync(RequeteValidePublic());
+
+        Assert.False(resultat.Succes);
+        _matchRepoMock.Verify(r => r.AddAsync(It.IsAny<Match>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task CreerMatchPublicAsync_ConflitConcurrentALEcriture_TraduitEnEchec() {
+        _matchRepoMock.Setup(r => r.AddAsync(It.IsAny<Match>())).ThrowsAsync(new CreneauIndisponibleException());
+
+        var resultat = await _service.CreerMatchPublicAsync(RequeteValidePublic());
+
+        Assert.False(resultat.Succes);
+    }
+
     [Fact]
     public async Task ObtenirCreneauxDisponiblesAsync_SiteInconnu_RetourneNull() {
         _siteRepoMock.Setup(r => r.GetByIdAsync(99)).ReturnsAsync((Site?)null);

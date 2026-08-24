@@ -71,4 +71,32 @@ public class MatchControllerTests {
         // Assert
         Assert.IsType<BadRequestObjectResult>(resultat);
     }
+
+    [Fact]
+    public async Task CreerPublic_RequeteValide_RetourneOk() {
+        // Arrange
+        var requete = new CreerMatchPublicRequestDto { OrganisateurMatricule = "G0001", SiteId = 1, TerrainId = 11, Date = new DateOnly(2026, 1, 5), HeureDebut = new TimeOnly(9, 0) };
+        var dto = new MatchDto { Id = 1, SiteId = 1, TerrainId = 11, OrganisateurMatricule = "G0001", Statut = "INCOMPLET", Visibilite = "PUBLIC" };
+        _serviceMock.Setup(s => s.CreerMatchPublicAsync(requete)).ReturnsAsync(new CreerMatchResultatDto { Succes = true, Match = dto });
+
+        // Act
+        var resultat = await _controller.CreerPublic(requete);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(resultat);
+        Assert.Equal(dto, okResult.Value);
+    }
+
+    [Fact]
+    public async Task CreerPublic_RequeteInvalide_RetourneBadRequest() {
+        // Arrange
+        var requete = new CreerMatchPublicRequestDto { OrganisateurMatricule = "XXXX", SiteId = 1, TerrainId = 11, Date = new DateOnly(2026, 1, 5), HeureDebut = new TimeOnly(9, 0) };
+        _serviceMock.Setup(s => s.CreerMatchPublicAsync(requete)).ReturnsAsync(new CreerMatchResultatDto { Succes = false, MessageErreur = "Organisateur introuvable." });
+
+        // Act
+        var resultat = await _controller.CreerPublic(requete);
+
+        // Assert
+        Assert.IsType<BadRequestObjectResult>(resultat);
+    }
 }

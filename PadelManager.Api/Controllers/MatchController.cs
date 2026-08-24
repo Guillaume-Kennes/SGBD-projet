@@ -32,4 +32,13 @@ public class MatchController : ControllerBase {
 
         return Ok(resultat.Match);
     }
+
+    [HttpPost("publics")]
+    public async Task<IActionResult> CreerPublic([FromBody] CreerMatchPublicRequestDto requete) {
+        var resultat = await _matchService.CreerMatchPublicAsync(requete);
+        if (!resultat.Succes)
+            return BadRequest(new { message = resultat.MessageErreur });
+
+        return Ok(resultat.Match);
+    }
 }
