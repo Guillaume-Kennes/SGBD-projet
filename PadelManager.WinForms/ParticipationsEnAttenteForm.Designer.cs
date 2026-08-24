@@ -105,9 +105,14 @@ namespace PadelManager.WinForms
             //
             // lblMontant
             //
+            // Sur sa propre ligne, pleine largeur (comme lblMessage) plutôt qu'à droite du
+            // bouton : à cette position, un texte plus long que prévu (dette à 3 chiffres) sortait
+            // du ClientSize sans jamais s'afficher tant que la fenêtre n'était pas agrandie
+            // manuellement. Ici il reste toujours dans la zone visible, et wrap sur MaximumSize si
+            // jamais trop long.
             lblMontant.AutoSize = true;
-            lblMontant.Location = new Point(410, 341);
-            lblMontant.MaximumSize = new Size(400, 0);
+            lblMontant.Location = new Point(20, 372);
+            lblMontant.MaximumSize = new Size(600, 0);
             lblMontant.Name = "lblMontant";
             lblMontant.Size = new Size(0, 20);
             lblMontant.TabIndex = 3;
@@ -115,7 +120,7 @@ namespace PadelManager.WinForms
             // lblMessage
             //
             lblMessage.AutoSize = true;
-            lblMessage.Location = new Point(20, 385);
+            lblMessage.Location = new Point(20, 400);
             lblMessage.MaximumSize = new Size(600, 0);
             lblMessage.Name = "lblMessage";
             lblMessage.Size = new Size(0, 20);
@@ -125,7 +130,7 @@ namespace PadelManager.WinForms
             //
             AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(640, 430);
+            ClientSize = new Size(640, 450);
             Controls.Add(lblMessage);
             Controls.Add(lblMontant);
             Controls.Add(btnPayer);
