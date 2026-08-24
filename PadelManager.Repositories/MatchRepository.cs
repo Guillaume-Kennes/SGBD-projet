@@ -138,7 +138,12 @@ public class MatchRepository : IMatchRepository {
         return await _context.Participations
             .Include(p => p.Match).ThenInclude(m => m.Site)
             .Include(p => p.Match).ThenInclude(m => m.Terrain)
-            .Where(p => p.MembreMatricule == membreMatricule && p.Paiement == null)
+            // Une participation à un match PUBLIC n'existe jamais sans paiement (EF-bk-006 :
+            // inscription + paiement en une seule opération) — ce filtre exclut donc en principe
+            // un cas déjà impossible en usage normal, mais reste nécessaire pour ne jamais
+            // remonter un résidu de données de test ou d'anomalie sur cet écran réservé aux
+            // matchs privés.
+            .Where(p => p.MembreMatricule == membreMatricule && p.Paiement == null && p.Match.Visibilite == "PRIVE")
             .ToListAsync();
     }
 
