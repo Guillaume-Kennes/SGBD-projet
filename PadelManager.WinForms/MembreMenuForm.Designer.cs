@@ -32,6 +32,7 @@ namespace PadelManager.WinForms
             btnCreerMatchPublic = new Button();
             btnMatchsPublics = new Button();
             btnParticipationsEnAttente = new Button();
+            btnReservations = new Button();
             SuspendLayout();
             //
             // lblConnecte
@@ -82,11 +83,22 @@ namespace PadelManager.WinForms
             btnParticipationsEnAttente.UseVisualStyleBackColor = true;
             btnParticipationsEnAttente.Click += btnParticipationsEnAttente_Click;
             //
+            // btnReservations
+            //
+            btnReservations.Location = new Point(20, 250);
+            btnReservations.Name = "btnReservations";
+            btnReservations.Size = new Size(280, 34);
+            btnReservations.TabIndex = 5;
+            btnReservations.Text = "Mes réservations";
+            btnReservations.UseVisualStyleBackColor = true;
+            btnReservations.Click += btnReservations_Click;
+            //
             // MembreMenuForm
             //
             AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(340, 265);
+            ClientSize = new Size(340, 310);
+            Controls.Add(btnReservations);
             Controls.Add(btnParticipationsEnAttente);
             Controls.Add(btnMatchsPublics);
             Controls.Add(btnCreerMatchPublic);
@@ -105,5 +117,6 @@ namespace PadelManager.WinForms
         private Button btnCreerMatchPublic;
         private Button btnMatchsPublics;
         private Button btnParticipationsEnAttente;
+        private Button btnReservations;
     }
 }

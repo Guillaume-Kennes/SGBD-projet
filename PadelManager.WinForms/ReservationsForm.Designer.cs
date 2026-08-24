@@ -1,6 +1,6 @@
 namespace PadelManager.WinForms
 {
-    partial class MatchsPublicsForm
+    partial class ReservationsForm
     {
         /// <summary>
         ///  Required designer variable.
@@ -27,34 +27,34 @@ namespace PadelManager.WinForms
         ///  the contents of this method with the code editor.
         /// </summary>
         private void InitializeComponent() {
-            grdMatchs = new DataGridView();
+            grdReservations = new DataGridView();
             colNomSite = new DataGridViewTextBoxColumn();
             colTerrain = new DataGridViewTextBoxColumn();
             colDateHeure = new DataGridViewTextBoxColumn();
-            colPlacesRestantes = new DataGridViewTextBoxColumn();
+            colVisibilite = new DataGridViewTextBoxColumn();
+            colStatut = new DataGridViewTextBoxColumn();
+            colEstOrganisateur = new DataGridViewCheckBoxColumn();
             btnRafraichir = new Button();
-            btnRejoindre = new Button();
             btnVoirDetail = new Button();
-            lblMontant = new Label();
             lblMessage = new Label();
-            ((System.ComponentModel.ISupportInitialize)grdMatchs).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)grdReservations).BeginInit();
             SuspendLayout();
             //
-            // grdMatchs
+            // grdReservations
             //
-            grdMatchs.AllowUserToAddRows = false;
-            grdMatchs.AllowUserToDeleteRows = false;
-            grdMatchs.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-            grdMatchs.AutoGenerateColumns = false;
-            grdMatchs.Columns.AddRange(new DataGridViewColumn[] { colNomSite, colTerrain, colDateHeure, colPlacesRestantes });
-            grdMatchs.Location = new Point(20, 20);
-            grdMatchs.MultiSelect = false;
-            grdMatchs.Name = "grdMatchs";
-            grdMatchs.ReadOnly = true;
-            grdMatchs.RowHeadersWidth = 25;
-            grdMatchs.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-            grdMatchs.Size = new Size(600, 300);
-            grdMatchs.TabIndex = 0;
+            grdReservations.AllowUserToAddRows = false;
+            grdReservations.AllowUserToDeleteRows = false;
+            grdReservations.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            grdReservations.AutoGenerateColumns = false;
+            grdReservations.Columns.AddRange(new DataGridViewColumn[] { colNomSite, colTerrain, colDateHeure, colVisibilite, colStatut, colEstOrganisateur });
+            grdReservations.Location = new Point(20, 20);
+            grdReservations.MultiSelect = false;
+            grdReservations.Name = "grdReservations";
+            grdReservations.ReadOnly = true;
+            grdReservations.RowHeadersWidth = 25;
+            grdReservations.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+            grdReservations.Size = new Size(700, 300);
+            grdReservations.TabIndex = 0;
             //
             // colNomSite
             //
@@ -77,12 +77,26 @@ namespace PadelManager.WinForms
             colDateHeure.Name = "colDateHeure";
             colDateHeure.ReadOnly = true;
             //
-            // colPlacesRestantes
+            // colVisibilite
             //
-            colPlacesRestantes.DataPropertyName = "PlacesRestantes";
-            colPlacesRestantes.HeaderText = "Places restantes";
-            colPlacesRestantes.Name = "colPlacesRestantes";
-            colPlacesRestantes.ReadOnly = true;
+            colVisibilite.DataPropertyName = "Visibilite";
+            colVisibilite.HeaderText = "Visibilité";
+            colVisibilite.Name = "colVisibilite";
+            colVisibilite.ReadOnly = true;
+            //
+            // colStatut
+            //
+            colStatut.DataPropertyName = "Statut";
+            colStatut.HeaderText = "Statut";
+            colStatut.Name = "colStatut";
+            colStatut.ReadOnly = true;
+            //
+            // colEstOrganisateur
+            //
+            colEstOrganisateur.DataPropertyName = "EstOrganisateur";
+            colEstOrganisateur.HeaderText = "Organisateur";
+            colEstOrganisateur.Name = "colEstOrganisateur";
+            colEstOrganisateur.ReadOnly = true;
             //
             // btnRafraichir
             //
@@ -94,79 +108,53 @@ namespace PadelManager.WinForms
             btnRafraichir.UseVisualStyleBackColor = true;
             btnRafraichir.Click += btnRafraichir_Click;
             //
-            // btnRejoindre
-            //
-            btnRejoindre.Location = new Point(180, 335);
-            btnRejoindre.Name = "btnRejoindre";
-            btnRejoindre.Size = new Size(220, 29);
-            btnRejoindre.TabIndex = 2;
-            btnRejoindre.Text = "Rejoindre et payer 15€";
-            btnRejoindre.UseVisualStyleBackColor = true;
-            btnRejoindre.Click += btnRejoindre_Click;
-            //
             // btnVoirDetail
             //
-            btnVoirDetail.Location = new Point(410, 335);
+            btnVoirDetail.Location = new Point(180, 335);
             btnVoirDetail.Name = "btnVoirDetail";
             btnVoirDetail.Size = new Size(150, 29);
-            btnVoirDetail.TabIndex = 3;
+            btnVoirDetail.TabIndex = 2;
             btnVoirDetail.Text = "Voir le détail";
             btnVoirDetail.UseVisualStyleBackColor = true;
             btnVoirDetail.Click += btnVoirDetail_Click;
             //
-            // lblMontant
-            //
-            // Sur sa propre ligne, pleine largeur (comme lblMessage) plutôt qu'à droite du
-            // bouton : à cette position, un texte plus long que prévu (dette à 3 chiffres) sortait
-            // du ClientSize sans jamais s'afficher tant que la fenêtre n'était pas agrandie
-            // manuellement. Ici il reste toujours dans la zone visible, et wrap sur MaximumSize si
-            // jamais trop long.
-            lblMontant.AutoSize = true;
-            lblMontant.Location = new Point(20, 372);
-            lblMontant.MaximumSize = new Size(600, 0);
-            lblMontant.Name = "lblMontant";
-            lblMontant.Size = new Size(0, 20);
-            lblMontant.TabIndex = 4;
-            //
             // lblMessage
             //
             lblMessage.AutoSize = true;
-            lblMessage.Location = new Point(20, 400);
-            lblMessage.MaximumSize = new Size(600, 0);
+            lblMessage.Location = new Point(20, 375);
+            lblMessage.MaximumSize = new Size(700, 0);
             lblMessage.Name = "lblMessage";
             lblMessage.Size = new Size(0, 20);
-            lblMessage.TabIndex = 5;
+            lblMessage.TabIndex = 3;
             //
-            // MatchsPublicsForm
+            // ReservationsForm
             //
             AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(640, 450);
+            ClientSize = new Size(740, 420);
             Controls.Add(lblMessage);
-            Controls.Add(lblMontant);
             Controls.Add(btnVoirDetail);
-            Controls.Add(btnRejoindre);
             Controls.Add(btnRafraichir);
-            Controls.Add(grdMatchs);
-            Name = "MatchsPublicsForm";
-            Text = "Matchs publics";
-            Load += MatchsPublicsForm_Load;
-            ((System.ComponentModel.ISupportInitialize)grdMatchs).EndInit();
+            Controls.Add(grdReservations);
+            Name = "ReservationsForm";
+            Text = "Mes réservations";
+            Load += ReservationsForm_Load;
+            ((System.ComponentModel.ISupportInitialize)grdReservations).EndInit();
             ResumeLayout(false);
             PerformLayout();
         }
 
         #endregion
 
-        private DataGridView grdMatchs;
+        private DataGridView grdReservations;
         private DataGridViewTextBoxColumn colNomSite;
         private DataGridViewTextBoxColumn colTerrain;
         private DataGridViewTextBoxColumn colDateHeure;
-        private DataGridViewTextBoxColumn colPlacesRestantes;
+        private DataGridViewTextBoxColumn colVisibilite;
+        private DataGridViewTextBoxColumn colStatut;
+        private DataGridViewCheckBoxColumn colEstOrganisateur;
         private Button btnRafraichir;
-        private Button btnRejoindre;
         private Button btnVoirDetail;
-        private Label lblMontant;
         private Label lblMessage;
     }
 }
