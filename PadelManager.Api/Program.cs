@@ -25,13 +25,17 @@ builder.Services.AddScoped<IHoraireSiteRepository, HoraireSiteRepository>();
 builder.Services.AddScoped<IJourFermetureRepository, JourFermetureRepository>();
 builder.Services.AddScoped<IFermetureHebdoGlobaleRepository, FermetureHebdoGlobaleRepository>();
 builder.Services.AddScoped<IDisponibiliteRepository, DisponibiliteRepository>();
+builder.Services.AddScoped<ITerrainRepository, TerrainRepository>();
+builder.Services.AddScoped<IMatchRepository, MatchRepository>();
+builder.Services.AddScoped<IDetteRepository, DetteRepository>();
+builder.Services.AddScoped<IPenaliteRepository, PenaliteRepository>();
 
 builder.Services.AddScoped<ISiteService, SiteService>();
 builder.Services.AddScoped<IDisponibiliteGenerationService, DisponibiliteGenerationService>();
 builder.Services.AddScoped<IHoraireSiteService, HoraireSiteService>();
-builder.Services.AddScoped<IDisponibiliteService, DisponibiliteService>();
 builder.Services.AddScoped<IJourFermetureService, JourFermetureService>();
 builder.Services.AddScoped<IFermetureHebdoGlobaleService, FermetureHebdoGlobaleService>();
+builder.Services.AddScoped<IMatchService, MatchService>();
 
 var app = builder.Build();
 

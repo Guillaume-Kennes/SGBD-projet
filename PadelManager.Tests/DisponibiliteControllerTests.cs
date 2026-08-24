@@ -9,47 +9,15 @@ namespace PadelManager.Tests;
 
 public class DisponibiliteControllerTests {
     private readonly Mock<ISiteService> _siteServiceMock;
-    private readonly Mock<IDisponibiliteService> _disponibiliteServiceMock;
     private readonly Mock<IDisponibiliteGenerationService> _generationServiceMock;
     private readonly DisponibiliteController _controller;
 
     public DisponibiliteControllerTests() {
         _siteServiceMock = new Mock<ISiteService>();
-        _disponibiliteServiceMock = new Mock<IDisponibiliteService>();
         _generationServiceMock = new Mock<IDisponibiliteGenerationService>();
-        _controller = new DisponibiliteController(_siteServiceMock.Object, _disponibiliteServiceMock.Object, _generationServiceMock.Object);
+        _controller = new DisponibiliteController(_siteServiceMock.Object, _generationServiceMock.Object);
 
         _siteServiceMock.Setup(s => s.ObtenirParIdAsync(1)).ReturnsAsync(new SiteDto { Id = 1, Nom = "Site 1" });
-    }
-
-    [Fact]
-    public async Task ConsulterPlanning_SiteConnu_RetourneOk() {
-        // Arrange
-        var from = new DateOnly(2026, 1, 1);
-        var to = new DateOnly(2026, 1, 31);
-        var disponibilites = new List<DisponibiliteDto> { new() { SiteId = 1, Date = from } };
-        _disponibiliteServiceMock.Setup(s => s.ConsulterPlanningAsync(1, from, to)).ReturnsAsync(disponibilites);
-
-        // Act
-        var resultat = await _controller.ConsulterPlanning(1, from, to);
-
-        // Assert
-        var okResult = Assert.IsType<OkObjectResult>(resultat);
-        Assert.Equal(disponibilites, okResult.Value);
-    }
-
-    [Fact]
-    public async Task ConsulterPlanning_SiteInconnu_RetourneNotFound() {
-        // Arrange
-        var from = new DateOnly(2026, 1, 1);
-        var to = new DateOnly(2026, 1, 31);
-        _disponibiliteServiceMock.Setup(s => s.ConsulterPlanningAsync(99, from, to)).ReturnsAsync((List<DisponibiliteDto>?)null);
-
-        // Act
-        var resultat = await _controller.ConsulterPlanning(99, from, to);
-
-        // Assert
-        Assert.IsType<NotFoundObjectResult>(resultat);
     }
 
     [Fact]

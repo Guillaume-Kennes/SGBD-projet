@@ -42,14 +42,17 @@ namespace PadelManager.WinForms
                     return;
                 }
 
-                lblMessage.Text = $"Connecté : {resultat.Matricule} ({resultat.TypeUtilisateur} - {resultat.Type})";
-
-                // TODO (issues futures) : ouvrir MainForm selon le rôle,
-                // en lui passant `resultat` pour adapter l'interface.
+                Hide();
+                using var menuForm = new MembreMenuForm(resultat);
+                menuForm.ShowDialog();
+                Close();
             } catch (HttpRequestException) {
                 lblMessage.Text = "Impossible de contacter le serveur. Vérifiez que l'API est lancée.";
             } finally {
-                btnConnexion.Enabled = true;
+                // MembreMenuForm peut avoir fermé/disposé ce formulaire entre-temps (connexion
+                // réussie) : dans ce cas il n'y a plus de bouton à réactiver.
+                if (!IsDisposed)
+                    btnConnexion.Enabled = true;
             }
         }
     }

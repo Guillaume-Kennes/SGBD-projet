@@ -7,25 +7,13 @@ namespace PadelManager.Api.Controllers;
 [Route("api/sites/{siteId:int}/disponibilites")]
 public class DisponibiliteController : ControllerBase {
     private readonly ISiteService _siteService;
-    private readonly IDisponibiliteService _disponibiliteService;
     private readonly IDisponibiliteGenerationService _disponibiliteGenerationService;
 
     public DisponibiliteController(
         ISiteService siteService,
-        IDisponibiliteService disponibiliteService,
         IDisponibiliteGenerationService disponibiliteGenerationService) {
         _siteService = siteService;
-        _disponibiliteService = disponibiliteService;
         _disponibiliteGenerationService = disponibiliteGenerationService;
-    }
-
-    [HttpGet]
-    public async Task<IActionResult> ConsulterPlanning(int siteId, [FromQuery] DateOnly from, [FromQuery] DateOnly to) {
-        var disponibilites = await _disponibiliteService.ConsulterPlanningAsync(siteId, from, to);
-        if (disponibilites == null)
-            return NotFound(new { message = "Site introuvable." });
-
-        return Ok(disponibilites);
     }
 
     // Déclenchement manuel de la génération (EF-bk-022). Utile par ex. après ajout de
