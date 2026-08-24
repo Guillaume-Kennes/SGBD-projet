@@ -22,7 +22,8 @@ public class AuthService : IAuthService {
                 Matricule = membre.Matricule,
                 TypeUtilisateur = "Membre",
                 Type = membre.TypeMembre,
-                SiteId = membre.SiteId
+                SiteId = membre.SiteId,
+                AnticipationMaxJours = membre.TypeMembreNavigation.AnticipationMaxJours
             };
         }
 

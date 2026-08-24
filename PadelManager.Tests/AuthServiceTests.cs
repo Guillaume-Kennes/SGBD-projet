@@ -19,8 +19,11 @@ public class AuthServiceTests {
 
     [Fact]
     public async Task SeConnecterAsync_MatriculeMembreValide_RetourneDtoMembre() {
-        // Arrange
-        var membre = new Membre { Matricule = "G0001", TypeMembre = "GLOBAL", SiteId = null };
+        // Arrange : TypeMembreNavigation toujours chargée en pratique (MembreRepository.Include)
+        var membre = new Membre {
+            Matricule = "G0001", TypeMembre = "GLOBAL", SiteId = null,
+            TypeMembreNavigation = new TypeMembre { Code = "GLOBAL", Libelle = "Membre global", AnticipationMaxJours = 21, PrefixeMatricule = "G" }
+        };
         _membreRepoMock.Setup(r => r.GetByMatriculeAsync("G0001")).ReturnsAsync(membre);
 
         // Act
@@ -32,6 +35,7 @@ public class AuthServiceTests {
         Assert.Equal("Membre", resultat.TypeUtilisateur);
         Assert.Equal("GLOBAL", resultat.Type);
         Assert.Null(resultat.SiteId);
+        Assert.Equal(21, resultat.AnticipationMaxJours);
     }
 
     [Fact]
@@ -48,6 +52,7 @@ public class AuthServiceTests {
         Assert.NotNull(resultat);
         Assert.Equal("Administrateur", resultat!.TypeUtilisateur);
         Assert.Equal("GLOBAL", resultat.Type);
+        Assert.Null(resultat.AnticipationMaxJours);
     }
 
     [Fact]
