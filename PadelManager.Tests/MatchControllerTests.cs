@@ -221,4 +221,60 @@ public class MatchControllerTests {
         // Assert
         Assert.IsType<NotFoundObjectResult>(resultat);
     }
+
+    [Fact]
+    public async Task ObtenirReservations_MembreConnu_RetourneOk() {
+        // Arrange
+        var reservations = new List<ReservationDto> { new() { Id = 1, SiteId = 1, NomSite = "Site 1", TerrainId = 11, NumeroTerrain = 2, DateHeure = new DateTime(2026, 1, 5, 9, 0, 0), Visibilite = "PRIVE", Statut = "INCOMPLET", EstOrganisateur = true } };
+        _serviceMock.Setup(s => s.ObtenirReservationsAsync("G0001")).ReturnsAsync(reservations);
+
+        // Act
+        var resultat = await _controller.ObtenirReservations("G0001");
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(resultat);
+        Assert.Equal(reservations, okResult.Value);
+    }
+
+    [Fact]
+    public async Task ObtenirReservations_MembreInconnu_RetourneNotFound() {
+        // Arrange
+        _serviceMock.Setup(s => s.ObtenirReservationsAsync("XXXX")).ReturnsAsync((List<ReservationDto>?)null);
+
+        // Act
+        var resultat = await _controller.ObtenirReservations("XXXX");
+
+        // Assert
+        Assert.IsType<NotFoundObjectResult>(resultat);
+    }
+
+    [Fact]
+    public async Task ObtenirDetail_MatchConsultable_RetourneOk() {
+        // Arrange
+        var detail = new MatchDetailDto {
+            Id = 1, SiteId = 1, NomSite = "Site 1", TerrainId = 11, NumeroTerrain = 2,
+            DateHeure = new DateTime(2026, 1, 5, 9, 0, 0), Visibilite = "PRIVE", Statut = "INCOMPLET",
+            OrganisateurMatricule = "G0001", Joueurs = new List<JoueurDetailDto> { new() { MembreMatricule = "G0001", Paye = true } }
+        };
+        _serviceMock.Setup(s => s.ObtenirDetailAsync(1, "G0001")).ReturnsAsync(detail);
+
+        // Act
+        var resultat = await _controller.ObtenirDetail(1, "G0001");
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(resultat);
+        Assert.Equal(detail, okResult.Value);
+    }
+
+    [Fact]
+    public async Task ObtenirDetail_IntrouvableOuNonAutorise_RetourneNotFound() {
+        // Arrange
+        _serviceMock.Setup(s => s.ObtenirDetailAsync(1, "XXXX")).ReturnsAsync((MatchDetailDto?)null);
+
+        // Act
+        var resultat = await _controller.ObtenirDetail(1, "XXXX");
+
+        // Assert
+        Assert.IsType<NotFoundObjectResult>(resultat);
+    }
 }

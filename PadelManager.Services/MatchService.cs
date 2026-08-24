@@ -250,6 +250,74 @@ public class MatchService : IMatchService {
             .ToList();
     }
 
+    public async Task<List<ReservationDto>?> ObtenirReservationsAsync(string membreMatricule) {
+        var membre = await _membreRepository.GetByMatriculeAsync(membreMatricule);
+        if (membre == null)
+            return null;
+
+        var matchs = await _matchRepository.GetReservationsAsync(membreMatricule);
+
+        // Les plus récentes/imminentes en premier (mélange volontaire de passé et de futur,
+        // EF-bk-013 ne prescrit aucun tri) : la date la plus proche du présent, dans un sens ou
+        // l'autre, est en général ce qui intéresse le plus le membre en premier lieu.
+        return matchs
+            .OrderByDescending(m => m.DateHeure)
+            .Select(m => new ReservationDto {
+                Id = m.Id,
+                SiteId = m.SiteId,
+                NomSite = m.Site.Nom,
+                TerrainId = m.TerrainId,
+                NumeroTerrain = m.Terrain.Numero,
+                DateHeure = m.DateHeure,
+                Visibilite = m.Visibilite,
+                Statut = m.Statut,
+                EstOrganisateur = m.OrganisateurMatricule == membreMatricule
+            })
+            .ToList();
+    }
+
+    public async Task<MatchDetailDto?> ObtenirDetailAsync(int matchId, string membreMatricule) {
+        var membre = await _membreRepository.GetByMatriculeAsync(membreMatricule);
+        if (membre == null)
+            return null;
+
+        var match = await _matchRepository.GetDetailAsync(matchId);
+        if (match == null || !PeutConsulter(match, membre))
+            return null;
+
+        return new MatchDetailDto {
+            Id = match.Id,
+            SiteId = match.SiteId,
+            NomSite = match.Site.Nom,
+            TerrainId = match.TerrainId,
+            NumeroTerrain = match.Terrain.Numero,
+            DateHeure = match.DateHeure,
+            Visibilite = match.Visibilite,
+            Statut = match.Statut,
+            OrganisateurMatricule = match.OrganisateurMatricule,
+            Joueurs = match.Participations
+                .Select(p => new JoueurDetailDto { MembreMatricule = p.MembreMatricule, Paye = p.Paiement != null })
+                .ToList()
+        };
+    }
+
+    // EF-bk-021 : consultable si organisateur/participant, quel que soit le site ou la visibilité
+    // (un joueur invité à un match privé sur un autre site — R-ACC-005 — doit pouvoir en voir le
+    // détail) ; sinon, uniquement si le match est public et dans le périmètre du membre (EF-bk-012,
+    // même règle de portée que pour rejoindre — R-ACC-002 — mais sans la fenêtre de délai de
+    // R-VAL-003, qui ne borne que la validation d'une inscription, pas la consultation).
+    private static bool PeutConsulter(Match match, Membre membre) {
+        var estImplique = match.OrganisateurMatricule == membre.Matricule
+            || match.Participations.Any(p => p.MembreMatricule == membre.Matricule);
+        if (estImplique)
+            return true;
+
+        if (match.Visibilite != "PUBLIC")
+            return false;
+
+        return membre.TypeMembre != "SITE" || membre.SiteId == match.SiteId;
+    }
+
     private static InscriptionResultatDto EchecInscription(string message) => new() { Succes = false, MessageErreur = message };
 
     private static MatchPublicDto VersMatchPublicDto(Match match) => new() {

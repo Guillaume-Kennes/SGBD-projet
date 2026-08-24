@@ -39,4 +39,13 @@ public interface IMatchRepository {
     // Participations d'un membre encore en attente de paiement (EF-bk-007 : ajouté par un
     // organisateur à un match privé), Match/Site/Terrain inclus pour l'affichage.
     Task<List<Participation>> GetParticipationsEnAttenteAsync(string membreMatricule);
+
+    // Tous les matchs où le membre est organisateur OU participant, passés ou à venir, quel que
+    // soit le statut ou la visibilité (EF-bk-013). Site/Terrain/Participations inclus pour
+    // l'affichage.
+    Task<List<Match>> GetReservationsAsync(string membreMatricule);
+
+    // Détail complet d'un match (EF-bk-021) : Site/Terrain/Participations+Paiement inclus, pour
+    // afficher le statut de paiement de chaque joueur.
+    Task<Match?> GetDetailAsync(int id);
 }
