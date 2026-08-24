@@ -14,4 +14,29 @@ public interface IMatchRepository {
     // Insère le match avec son graphe complet (Participations + Paiement de l'organisateur),
     // construit par le service, en une seule opération (R-VAL-005).
     Task<Match> AddAsync(Match match);
+
+    Task<Match?> GetByIdAsync(int id);
+
+    // Matchs publics encore incomplets et pas encore commencés (EF-bk-005), Site/Terrain inclus
+    // pour l'affichage ; le filtrage par portée/délai du membre est du ressort du Service.
+    Task<List<Match>> GetPublicsIncompletsAsync(DateTime maintenant);
+
+    // Inscrit le membre et valide sa participation par paiement immédiat (EF-bk-006/007), sous
+    // verrou (UPDLOCK/HOLDLOCK sur la ligne MATCH) pour ne jamais dépasser 4 participations en
+    // cas de concurrence (ENF-010, R-STR-002). Solde la dette fournie le cas échéant (EF-bk-018)
+    // et bascule le match à COMPLET si c'est la 4e participation validée.
+    Task<Participation> InscrireEtPayerAsync(int matchId, string membreMatricule, Dette? detteAReporter);
+
+    Task<Participation?> GetParticipationByIdAsync(int id);
+
+    // Valide par paiement une participation déjà existante et non payée (EF-bk-007 : joueur
+    // ajouté à un match privé qui paie sa part en attente). Même verrou que InscrireEtPayerAsync
+    // (sur le MATCH de cette participation) pour déterminer correctement, même en cas de
+    // paiements concurrents par plusieurs joueurs du même match, si c'est la 4e participation
+    // désormais payée (bascule à COMPLET). Solde la dette fournie le cas échéant (EF-bk-018).
+    Task<Participation> PayerParticipationAsync(Participation participation, Dette? detteAReporter);
+
+    // Participations d'un membre encore en attente de paiement (EF-bk-007 : ajouté par un
+    // organisateur à un match privé), Match/Site/Terrain inclus pour l'affichage.
+    Task<List<Participation>> GetParticipationsEnAttenteAsync(string membreMatricule);
 }

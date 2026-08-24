@@ -58,4 +58,31 @@ public class DetteRepositoryTests {
 
         Assert.False(await repository.ExisteDetteNonSoldeeAsync("G0001"));
     }
+
+    [Fact]
+    public async Task GetNonSoldeeAsync_DetteActive_RetourneLaDette() {
+        // Arrange
+        await using var context = await CreerContexteAvecMatchAsync();
+        context.Dettes.Add(new Dette { MembreMatricule = "G0001", MatchOrigineId = 1, Montant = 30.00m, Soldee = false, DateCreation = DateTime.Now });
+        await context.SaveChangesAsync();
+
+        var repository = new DetteRepository(context);
+
+        // Act
+        var resultat = await repository.GetNonSoldeeAsync("G0001");
+
+        // Assert
+        Assert.NotNull(resultat);
+        Assert.Equal(30.00m, resultat!.Montant);
+    }
+
+    [Fact]
+    public async Task GetNonSoldeeAsync_AucuneDetteActive_RetourneNull() {
+        await using var context = await CreerContexteAvecMatchAsync();
+        var repository = new DetteRepository(context);
+
+        var resultat = await repository.GetNonSoldeeAsync("G0001");
+
+        Assert.Null(resultat);
+    }
 }

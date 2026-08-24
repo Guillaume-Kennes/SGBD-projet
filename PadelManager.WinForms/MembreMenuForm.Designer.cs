@@ -30,6 +30,8 @@ namespace PadelManager.WinForms
             lblConnecte = new Label();
             btnCreerMatch = new Button();
             btnCreerMatchPublic = new Button();
+            btnMatchsPublics = new Button();
+            btnParticipationsEnAttente = new Button();
             SuspendLayout();
             //
             // lblConnecte
@@ -60,11 +62,33 @@ namespace PadelManager.WinForms
             btnCreerMatchPublic.UseVisualStyleBackColor = true;
             btnCreerMatchPublic.Click += btnCreerMatchPublic_Click;
             //
+            // btnMatchsPublics
+            //
+            btnMatchsPublics.Location = new Point(20, 160);
+            btnMatchsPublics.Name = "btnMatchsPublics";
+            btnMatchsPublics.Size = new Size(280, 34);
+            btnMatchsPublics.TabIndex = 3;
+            btnMatchsPublics.Text = "Matchs publics";
+            btnMatchsPublics.UseVisualStyleBackColor = true;
+            btnMatchsPublics.Click += btnMatchsPublics_Click;
+            //
+            // btnParticipationsEnAttente
+            //
+            btnParticipationsEnAttente.Location = new Point(20, 205);
+            btnParticipationsEnAttente.Name = "btnParticipationsEnAttente";
+            btnParticipationsEnAttente.Size = new Size(280, 34);
+            btnParticipationsEnAttente.TabIndex = 4;
+            btnParticipationsEnAttente.Text = "Matchs privés à payer";
+            btnParticipationsEnAttente.UseVisualStyleBackColor = true;
+            btnParticipationsEnAttente.Click += btnParticipationsEnAttente_Click;
+            //
             // MembreMenuForm
             //
             AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(340, 185);
+            ClientSize = new Size(340, 265);
+            Controls.Add(btnParticipationsEnAttente);
+            Controls.Add(btnMatchsPublics);
             Controls.Add(btnCreerMatchPublic);
             Controls.Add(btnCreerMatch);
             Controls.Add(lblConnecte);
@@ -79,5 +103,7 @@ namespace PadelManager.WinForms
         private Label lblConnecte;
         private Button btnCreerMatch;
         private Button btnCreerMatchPublic;
+        private Button btnMatchsPublics;
+        private Button btnParticipationsEnAttente;
     }
 }

@@ -41,4 +41,49 @@ public class MatchController : ControllerBase {
 
         return Ok(resultat.Match);
     }
+
+    [HttpGet("publics")]
+    public async Task<IActionResult> ObtenirPublics([FromQuery] string membreMatricule) {
+        var matchs = await _matchService.ObtenirMatchsPublicsAsync(membreMatricule);
+        if (matchs == null)
+            return NotFound(new { message = "Membre introuvable." });
+
+        return Ok(matchs);
+    }
+
+    [HttpPost("{id:int}/inscription")]
+    public async Task<IActionResult> Rejoindre(int id, [FromBody] RejoindreMatchRequestDto requete) {
+        var resultat = await _matchService.RejoindreMatchPublicAsync(id, requete.MembreMatricule);
+        if (!resultat.Succes)
+            return BadRequest(new { message = resultat.MessageErreur });
+
+        return Ok(resultat);
+    }
+
+    [HttpGet("montant-a-payer")]
+    public async Task<IActionResult> ObtenirMontantAPayer([FromQuery] string membreMatricule) {
+        var montant = await _matchService.ObtenirMontantAPayerAsync(membreMatricule);
+        return Ok(montant);
+    }
+
+    // Route absolue : le paiement porte sur une PARTICIPATION, pas un match (EF-bk-007, joueur
+    // ajouté à un match privé qui paie sa part en attente).
+    [HttpPost("/api/participations/{id:int}/paiement")]
+    public async Task<IActionResult> PayerParticipation(int id, [FromBody] PayerParticipationRequestDto requete) {
+        var resultat = await _matchService.PayerParticipationAsync(id, requete.MembreMatricule);
+        if (!resultat.Succes)
+            return BadRequest(new { message = resultat.MessageErreur });
+
+        return Ok(resultat);
+    }
+
+    // Route absolue, comme la précédente : porte sur des PARTICIPATION, pas des MATCH.
+    [HttpGet("/api/participations/en-attente")]
+    public async Task<IActionResult> ObtenirParticipationsEnAttente([FromQuery] string membreMatricule) {
+        var participations = await _matchService.ObtenirParticipationsEnAttenteAsync(membreMatricule);
+        if (participations == null)
+            return NotFound(new { message = "Membre introuvable." });
+
+        return Ok(participations);
+    }
 }

@@ -99,4 +99,126 @@ public class MatchControllerTests {
         // Assert
         Assert.IsType<BadRequestObjectResult>(resultat);
     }
+
+    [Fact]
+    public async Task ObtenirPublics_MembreConnu_RetourneOk() {
+        // Arrange
+        var matchs = new List<MatchPublicDto> { new() { Id = 1, SiteId = 1, NomSite = "Site 1", TerrainId = 11, NumeroTerrain = 1, DateHeure = new DateTime(2026, 1, 5, 9, 0, 0), PlacesRestantes = 2 } };
+        _serviceMock.Setup(s => s.ObtenirMatchsPublicsAsync("G0001")).ReturnsAsync(matchs);
+
+        // Act
+        var resultat = await _controller.ObtenirPublics("G0001");
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(resultat);
+        Assert.Equal(matchs, okResult.Value);
+    }
+
+    [Fact]
+    public async Task ObtenirPublics_MembreInconnu_RetourneNotFound() {
+        // Arrange
+        _serviceMock.Setup(s => s.ObtenirMatchsPublicsAsync("XXXX")).ReturnsAsync((List<MatchPublicDto>?)null);
+
+        // Act
+        var resultat = await _controller.ObtenirPublics("XXXX");
+
+        // Assert
+        Assert.IsType<NotFoundObjectResult>(resultat);
+    }
+
+    [Fact]
+    public async Task Rejoindre_RequeteValide_RetourneOk() {
+        // Arrange
+        var requete = new RejoindreMatchRequestDto { MembreMatricule = "G0001" };
+        var attendu = new InscriptionResultatDto { Succes = true, MontantPaye = 15.00m, DetteReglee = false };
+        _serviceMock.Setup(s => s.RejoindreMatchPublicAsync(1, "G0001")).ReturnsAsync(attendu);
+
+        // Act
+        var resultat = await _controller.Rejoindre(1, requete);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(resultat);
+        Assert.Equal(attendu, okResult.Value);
+    }
+
+    [Fact]
+    public async Task Rejoindre_RequeteInvalide_RetourneBadRequest() {
+        // Arrange
+        var requete = new RejoindreMatchRequestDto { MembreMatricule = "XXXX" };
+        _serviceMock.Setup(s => s.RejoindreMatchPublicAsync(1, "XXXX")).ReturnsAsync(new InscriptionResultatDto { Succes = false, MessageErreur = "Membre introuvable." });
+
+        // Act
+        var resultat = await _controller.Rejoindre(1, requete);
+
+        // Assert
+        Assert.IsType<BadRequestObjectResult>(resultat);
+    }
+
+    [Fact]
+    public async Task ObtenirMontantAPayer_RetourneOk() {
+        // Arrange
+        var montant = new MontantAPayerDto { MontantParticipation = 15.00m, MontantDette = 45.00m, MontantTotal = 60.00m };
+        _serviceMock.Setup(s => s.ObtenirMontantAPayerAsync("G0001")).ReturnsAsync(montant);
+
+        // Act
+        var resultat = await _controller.ObtenirMontantAPayer("G0001");
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(resultat);
+        Assert.Equal(montant, okResult.Value);
+    }
+
+    [Fact]
+    public async Task PayerParticipation_RequeteValide_RetourneOk() {
+        // Arrange
+        var requete = new PayerParticipationRequestDto { MembreMatricule = "L00001" };
+        var attendu = new InscriptionResultatDto { Succes = true, MontantPaye = 15.00m, DetteReglee = false };
+        _serviceMock.Setup(s => s.PayerParticipationAsync(1, "L00001")).ReturnsAsync(attendu);
+
+        // Act
+        var resultat = await _controller.PayerParticipation(1, requete);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(resultat);
+        Assert.Equal(attendu, okResult.Value);
+    }
+
+    [Fact]
+    public async Task PayerParticipation_RequeteInvalide_RetourneBadRequest() {
+        // Arrange
+        var requete = new PayerParticipationRequestDto { MembreMatricule = "XXXX" };
+        _serviceMock.Setup(s => s.PayerParticipationAsync(1, "XXXX")).ReturnsAsync(new InscriptionResultatDto { Succes = false, MessageErreur = "Participation introuvable." });
+
+        // Act
+        var resultat = await _controller.PayerParticipation(1, requete);
+
+        // Assert
+        Assert.IsType<BadRequestObjectResult>(resultat);
+    }
+
+    [Fact]
+    public async Task ObtenirParticipationsEnAttente_MembreConnu_RetourneOk() {
+        // Arrange
+        var participations = new List<ParticipationEnAttenteDto> { new() { ParticipationId = 10, MatchId = 1, SiteId = 1, NomSite = "Site 1", TerrainId = 11, NumeroTerrain = 3, DateHeure = new DateTime(2026, 1, 5, 9, 0, 0), OrganisateurMatricule = "S00001" } };
+        _serviceMock.Setup(s => s.ObtenirParticipationsEnAttenteAsync("G0001")).ReturnsAsync(participations);
+
+        // Act
+        var resultat = await _controller.ObtenirParticipationsEnAttente("G0001");
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(resultat);
+        Assert.Equal(participations, okResult.Value);
+    }
+
+    [Fact]
+    public async Task ObtenirParticipationsEnAttente_MembreInconnu_RetourneNotFound() {
+        // Arrange
+        _serviceMock.Setup(s => s.ObtenirParticipationsEnAttenteAsync("XXXX")).ReturnsAsync((List<ParticipationEnAttenteDto>?)null);
+
+        // Act
+        var resultat = await _controller.ObtenirParticipationsEnAttente("XXXX");
+
+        // Assert
+        Assert.IsType<NotFoundObjectResult>(resultat);
+    }
 }
