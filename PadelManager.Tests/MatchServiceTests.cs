@@ -871,6 +871,34 @@ public class MatchServiceTests {
         Assert.True(resultat[1].EstOrganisateur);
     }
 
+    // "Statut TERMINE d'un match" (calcul hybride, CDC) : tant que le job de clôture (issue #10)
+    // n'a pas scellé le match, l'affichage doit calculer TERMINE dès que l'heure courante dépasse
+    // dateHeure + 1h30, sans jamais réécrire MATCH.statut en base.
+    [Fact]
+    public async Task ObtenirReservationsAsync_MatchPasseNonScelle_AfficheTermineCalcule() {
+        var site = new Site { Id = 1, Nom = "Site 1" };
+        var terrain = new Terrain { Id = 11, SiteId = 1, Numero = 3 };
+        var matchPasse = new Match { Id = 1, SiteId = 1, TerrainId = 11, DateHeure = DateTime.Now.AddDays(-1), Visibilite = "PRIVE", OrganisateurMatricule = "G0001", Statut = "INCOMPLET", Site = site, Terrain = terrain };
+        _matchRepoMock.Setup(r => r.GetReservationsAsync("G0001")).ReturnsAsync(new List<Match> { matchPasse });
+
+        var resultat = await _service.ObtenirReservationsAsync("G0001");
+
+        Assert.Equal("TERMINE", resultat![0].Statut);
+    }
+
+    [Fact]
+    public async Task ObtenirReservationsAsync_MatchDansLeCreneauEnCours_GardeLeStatutBrut() {
+        // Commencé il y a 30 minutes : encore dans le créneau de 1h30, pas terminé.
+        var site = new Site { Id = 1, Nom = "Site 1" };
+        var terrain = new Terrain { Id = 11, SiteId = 1, Numero = 3 };
+        var matchEnCours = new Match { Id = 1, SiteId = 1, TerrainId = 11, DateHeure = DateTime.Now.AddMinutes(-30), Visibilite = "PRIVE", OrganisateurMatricule = "G0001", Statut = "COMPLET", Site = site, Terrain = terrain };
+        _matchRepoMock.Setup(r => r.GetReservationsAsync("G0001")).ReturnsAsync(new List<Match> { matchEnCours });
+
+        var resultat = await _service.ObtenirReservationsAsync("G0001");
+
+        Assert.Equal("COMPLET", resultat![0].Statut);
+    }
+
     // --- ObtenirDetailAsync (EF-bk-021) ---
 
     private static Match MatchDetailValide(string visibilite = "PRIVE", string organisateur = "G0001", int siteId = 1, List<Participation>? participations = null) => new() {
@@ -914,6 +942,31 @@ public class MatchServiceTests {
         Assert.NotNull(resultat);
         Assert.Equal("Site 1", resultat!.NomSite);
         Assert.Equal(2, resultat.NumeroTerrain);
+    }
+
+    // "Statut TERMINE d'un match" (calcul hybride, CDC) — même règle que sur la liste des
+    // réservations.
+    [Fact]
+    public async Task ObtenirDetailAsync_MatchPasseNonScelle_AfficheTermineCalcule() {
+        var match = MatchDetailValide(organisateur: "G0001");
+        match.DateHeure = DateTime.Now.AddDays(-1); // toujours INCOMPLET en base (MatchDetailValide)
+        _matchRepoMock.Setup(r => r.GetDetailAsync(1)).ReturnsAsync(match);
+
+        var resultat = await _service.ObtenirDetailAsync(1, "G0001");
+
+        Assert.Equal("TERMINE", resultat!.Statut);
+    }
+
+    [Fact]
+    public async Task ObtenirDetailAsync_MatchDejaScelleTermine_RestTermine() {
+        var match = MatchDetailValide(organisateur: "G0001");
+        match.Statut = "TERMINE";
+        match.DateHeure = DateTime.Now.AddDays(-30);
+        _matchRepoMock.Setup(r => r.GetDetailAsync(1)).ReturnsAsync(match);
+
+        var resultat = await _service.ObtenirDetailAsync(1, "G0001");
+
+        Assert.Equal("TERMINE", resultat!.Statut);
     }
 
     [Fact]

@@ -263,7 +263,7 @@ public class MatchService : IMatchService {
                 NumeroTerrain = m.Terrain.Numero,
                 DateHeure = m.DateHeure,
                 Visibilite = m.Visibilite,
-                Statut = m.Statut,
+                Statut = CalculerStatutAffiche(m),
                 EstOrganisateur = m.OrganisateurMatricule == membreMatricule
             })
             .ToList();
@@ -286,12 +286,26 @@ public class MatchService : IMatchService {
             NumeroTerrain = match.Terrain.Numero,
             DateHeure = match.DateHeure,
             Visibilite = match.Visibilite,
-            Statut = match.Statut,
+            Statut = CalculerStatutAffiche(match),
             OrganisateurMatricule = match.OrganisateurMatricule,
             Joueurs = match.Participations
                 .Select(p => new JoueurDetailDto { MembreMatricule = p.MembreMatricule, Paye = p.Paiement != null })
                 .ToList()
         };
+    }
+
+    // "Statut TERMINE d'un match" (calcul hybride, CDC) : tant que le job de clôture quotidien
+    // (padel_job, EF-bk-008/issue #10) n'a pas encore scellé le match en base, son statut réel
+    // reste INCOMPLET/COMPLET même après l'heure du match — rien ne le met à jour en temps réel.
+    // On l'affiche donc calculé à la lecture dès que l'heure courante dépasse la fin du créneau
+    // (dateHeure + 1h30, R-STR-004), sans jamais écrire cette valeur en base ; un match déjà
+    // scellé TERMINE reste tel quel. Uniquement pour l'affichage (EF-bk-013/EF-bk-021) — la
+    // création d'un match n'est pas concernée.
+    private static string CalculerStatutAffiche(Match match) {
+        if (match.Statut == "TERMINE")
+            return "TERMINE";
+
+        return DateTime.Now > match.DateHeure.AddMinutes(90) ? "TERMINE" : match.Statut;
     }
 
     // EF-bk-021 : consultable si organisateur/participant, quel que soit le site ou la visibilité
