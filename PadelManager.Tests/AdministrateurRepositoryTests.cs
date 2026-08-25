@@ -17,17 +17,17 @@ public class AdministrateurRepositoryTests {
     public async Task GetByMatriculeAsync_AdministrateurGlobalExistant_RetourneLAdministrateur() {
         // Arrange
         await using var context = CreerContexteEnMemoire();
-        context.Administrateurs.Add(new Administrateur { Matricule = "AG0001", Type = "GLOBAL", SiteId = null });
+        context.Administrateurs.Add(new Administrateur { Matricule = "AG01", Type = "GLOBAL", SiteId = null });
         await context.SaveChangesAsync();
 
         var repository = new AdministrateurRepository(context);
 
         // Act
-        var resultat = await repository.GetByMatriculeAsync("AG0001");
+        var resultat = await repository.GetByMatriculeAsync("AG01");
 
         // Assert
         Assert.NotNull(resultat);
-        Assert.Equal("AG0001", resultat!.Matricule);
+        Assert.Equal("AG01", resultat!.Matricule);
         Assert.Equal("GLOBAL", resultat.Type);
         Assert.Null(resultat.SiteId);
     }
@@ -37,13 +37,13 @@ public class AdministrateurRepositoryTests {
         // Arrange
         await using var context = CreerContexteEnMemoire();
         context.Sites.Add(new Site { Id = 1, Nom = "Site 1" });
-        context.Administrateurs.Add(new Administrateur { Matricule = "AS0001", Type = "SITE", SiteId = 1 });
+        context.Administrateurs.Add(new Administrateur { Matricule = "AS01", Type = "SITE", SiteId = 1 });
         await context.SaveChangesAsync();
 
         var repository = new AdministrateurRepository(context);
 
         // Act
-        var resultat = await repository.GetByMatriculeAsync("AS0001");
+        var resultat = await repository.GetByMatriculeAsync("AS01");
 
         // Assert
         Assert.NotNull(resultat);

@@ -16,8 +16,8 @@ public class DetteRepositoryTests {
         var context = CreerContexteEnMemoire();
         context.Sites.Add(new Site { Id = 1, Nom = "Site 1" });
         context.Terrains.Add(new Terrain { Id = 11, SiteId = 1, Numero = 1 });
-        context.Membres.Add(new Membre { Matricule = "G0001", TypeMembre = "GLOBAL" });
-        context.Matches.Add(new Match { Id = 1, SiteId = 1, TerrainId = 11, DateHeure = new DateTime(2026, 1, 5, 9, 0, 0), Visibilite = "PRIVE", OrganisateurMatricule = "G0001", Statut = "TERMINE" });
+        context.Membres.Add(new Membre { Matricule = "G001", TypeMembre = "GLOBAL" });
+        context.Matches.Add(new Match { Id = 1, SiteId = 1, TerrainId = 11, DateHeure = new DateTime(2026, 1, 5, 9, 0, 0), Visibilite = "PRIVE", OrganisateurMatricule = "G001", Statut = "TERMINE" });
         await context.SaveChangesAsync();
         return context;
     }
@@ -26,13 +26,13 @@ public class DetteRepositoryTests {
     public async Task ExisteDetteNonSoldeeAsync_DetteActive_RetourneTrue() {
         // Arrange
         await using var context = await CreerContexteAvecMatchAsync();
-        context.Dettes.Add(new Dette { MembreMatricule = "G0001", MatchOrigineId = 1, Montant = 15.00m, Soldee = false, DateCreation = DateTime.Now });
+        context.Dettes.Add(new Dette { MembreMatricule = "G001", MatchOrigineId = 1, Montant = 15.00m, Soldee = false, DateCreation = DateTime.Now });
         await context.SaveChangesAsync();
 
         var repository = new DetteRepository(context);
 
         // Act & Assert
-        Assert.True(await repository.ExisteDetteNonSoldeeAsync("G0001"));
+        Assert.True(await repository.ExisteDetteNonSoldeeAsync("G001"));
     }
 
     [Fact]
@@ -40,7 +40,7 @@ public class DetteRepositoryTests {
         // Arrange
         await using var context = await CreerContexteAvecMatchAsync();
         context.Dettes.Add(new Dette {
-            MembreMatricule = "G0001", MatchOrigineId = 1, MatchReglementId = 1, Montant = 15.00m,
+            MembreMatricule = "G001", MatchOrigineId = 1, MatchReglementId = 1, Montant = 15.00m,
             Soldee = true, DateCreation = DateTime.Now, DateReglement = DateTime.Now
         });
         await context.SaveChangesAsync();
@@ -48,7 +48,7 @@ public class DetteRepositoryTests {
         var repository = new DetteRepository(context);
 
         // Act & Assert
-        Assert.False(await repository.ExisteDetteNonSoldeeAsync("G0001"));
+        Assert.False(await repository.ExisteDetteNonSoldeeAsync("G001"));
     }
 
     [Fact]
@@ -56,20 +56,20 @@ public class DetteRepositoryTests {
         await using var context = await CreerContexteAvecMatchAsync();
         var repository = new DetteRepository(context);
 
-        Assert.False(await repository.ExisteDetteNonSoldeeAsync("G0001"));
+        Assert.False(await repository.ExisteDetteNonSoldeeAsync("G001"));
     }
 
     [Fact]
     public async Task GetNonSoldeeAsync_DetteActive_RetourneLaDette() {
         // Arrange
         await using var context = await CreerContexteAvecMatchAsync();
-        context.Dettes.Add(new Dette { MembreMatricule = "G0001", MatchOrigineId = 1, Montant = 30.00m, Soldee = false, DateCreation = DateTime.Now });
+        context.Dettes.Add(new Dette { MembreMatricule = "G001", MatchOrigineId = 1, Montant = 30.00m, Soldee = false, DateCreation = DateTime.Now });
         await context.SaveChangesAsync();
 
         var repository = new DetteRepository(context);
 
         // Act
-        var resultat = await repository.GetNonSoldeeAsync("G0001");
+        var resultat = await repository.GetNonSoldeeAsync("G001");
 
         // Assert
         Assert.NotNull(resultat);
@@ -81,7 +81,7 @@ public class DetteRepositoryTests {
         await using var context = await CreerContexteAvecMatchAsync();
         var repository = new DetteRepository(context);
 
-        var resultat = await repository.GetNonSoldeeAsync("G0001");
+        var resultat = await repository.GetNonSoldeeAsync("G001");
 
         Assert.Null(resultat);
     }

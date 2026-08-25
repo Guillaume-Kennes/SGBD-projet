@@ -18,17 +18,17 @@ public class MembreRepositoryTests {
         // Arrange
         await using var context = CreerContexteEnMemoire();
         context.TypeMembres.Add(new TypeMembre { Code = "GLOBAL", Libelle = "Membre global", AnticipationMaxJours = 21, PrefixeMatricule = "G" });
-        context.Membres.Add(new Membre { Matricule = "G0001", TypeMembre = "GLOBAL", SiteId = null });
+        context.Membres.Add(new Membre { Matricule = "G001", TypeMembre = "GLOBAL", SiteId = null });
         await context.SaveChangesAsync();
 
         var repository = new MembreRepository(context);
 
         // Act
-        var resultat = await repository.GetByMatriculeAsync("G0001");
+        var resultat = await repository.GetByMatriculeAsync("G001");
 
         // Assert
         Assert.NotNull(resultat);
-        Assert.Equal("G0001", resultat!.Matricule);
+        Assert.Equal("G001", resultat!.Matricule);
         Assert.NotNull(resultat.TypeMembreNavigation);
         Assert.Equal("GLOBAL", resultat.TypeMembreNavigation.Code);
     }

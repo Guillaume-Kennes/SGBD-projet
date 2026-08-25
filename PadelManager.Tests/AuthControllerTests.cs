@@ -19,11 +19,11 @@ public class AuthControllerTests {
     [Fact]
     public async Task Connexion_MatriculeValide_RetourneOk() {
         // Arrange
-        var dto = new ConnexionResultatDto { Matricule = "G0001", TypeUtilisateur = "Membre", Type = "GLOBAL", SiteId = null };
-        _authServiceMock.Setup(s => s.SeConnecterAsync("G0001")).ReturnsAsync(dto);
+        var dto = new ConnexionResultatDto { Matricule = "G001", TypeUtilisateur = "Membre", Type = "GLOBAL", SiteId = null };
+        _authServiceMock.Setup(s => s.SeConnecterAsync("G001")).ReturnsAsync(dto);
 
         // Act
-        var resultat = await _controller.Connexion("G0001");
+        var resultat = await _controller.Connexion("G001");
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(resultat);

@@ -16,8 +16,8 @@ public class PenaliteRepositoryTests {
         var context = CreerContexteEnMemoire();
         context.Sites.Add(new Site { Id = 1, Nom = "Site 1" });
         context.Terrains.Add(new Terrain { Id = 11, SiteId = 1, Numero = 1 });
-        context.Membres.Add(new Membre { Matricule = "G0001", TypeMembre = "GLOBAL" });
-        context.Matches.Add(new Match { Id = 1, SiteId = 1, TerrainId = 11, DateHeure = new DateTime(2026, 1, 5, 9, 0, 0), Visibilite = "PRIVE", OrganisateurMatricule = "G0001", Statut = "TERMINE" });
+        context.Membres.Add(new Membre { Matricule = "G001", TypeMembre = "GLOBAL" });
+        context.Matches.Add(new Match { Id = 1, SiteId = 1, TerrainId = 11, DateHeure = new DateTime(2026, 1, 5, 9, 0, 0), Visibilite = "PRIVE", OrganisateurMatricule = "G001", Statut = "TERMINE" });
         await context.SaveChangesAsync();
         return context;
     }
@@ -27,14 +27,14 @@ public class PenaliteRepositoryTests {
         // Arrange
         await using var context = await CreerContexteAvecMatchAsync();
         context.Penalites.AddRange(
-            new Penalite { MembreMatricule = "G0001", MatchOrigineId = 1, DateApplication = new DateTime(2026, 1, 1), DelaiJusquAu = new DateOnly(2026, 1, 8) },
-            new Penalite { MembreMatricule = "G0001", MatchOrigineId = 1, DateApplication = new DateTime(2026, 2, 1), DelaiJusquAu = new DateOnly(2026, 2, 8) });
+            new Penalite { MembreMatricule = "G001", MatchOrigineId = 1, DateApplication = new DateTime(2026, 1, 1), DelaiJusquAu = new DateOnly(2026, 1, 8) },
+            new Penalite { MembreMatricule = "G001", MatchOrigineId = 1, DateApplication = new DateTime(2026, 2, 1), DelaiJusquAu = new DateOnly(2026, 2, 8) });
         await context.SaveChangesAsync();
 
         var repository = new PenaliteRepository(context);
 
         // Act
-        var resultat = await repository.GetPlusRecenteAsync("G0001");
+        var resultat = await repository.GetPlusRecenteAsync("G001");
 
         // Assert
         Assert.NotNull(resultat);
@@ -46,7 +46,7 @@ public class PenaliteRepositoryTests {
         await using var context = await CreerContexteAvecMatchAsync();
         var repository = new PenaliteRepository(context);
 
-        var resultat = await repository.GetPlusRecenteAsync("G0001");
+        var resultat = await repository.GetPlusRecenteAsync("G001");
 
         Assert.Null(resultat);
     }
