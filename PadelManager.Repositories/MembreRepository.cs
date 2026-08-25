@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using PadelManager.Interfaces;
 using PadelManager.Models;
 
@@ -17,5 +17,11 @@ public class MembreRepository : IMembreRepository {
             .Include(m => m.Site)
             .FirstOrDefaultAsync(m => m.Matricule == matricule);
     }
-}
 
+    public async Task<List<Membre>> GetTousAsync(int? siteId) {
+        if (siteId.HasValue)
+            return await _context.Membres.Where(m => m.TypeMembre == "SITE" && m.SiteId == siteId.Value).ToListAsync();
+
+        return await _context.Membres.ToListAsync();
+    }
+}
