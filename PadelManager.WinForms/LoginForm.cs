@@ -45,7 +45,15 @@ namespace PadelManager.WinForms
                 Hide();
                 using var menuForm = new MembreMenuForm(resultat);
                 menuForm.ShowDialog();
-                Close();
+
+                if (menuForm.Deconnexion) {
+                    // Retour à l'écran de connexion (matricule effacé) sans relancer l'application.
+                    txtMatricule.Clear();
+                    lblMessage.Text = "";
+                    Show();
+                } else {
+                    Close();
+                }
             } catch (HttpRequestException) {
                 lblMessage.Text = "Impossible de contacter le serveur. Vérifiez que l'API est lancée.";
             } finally {

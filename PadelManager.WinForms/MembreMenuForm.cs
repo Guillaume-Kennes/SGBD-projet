@@ -8,6 +8,11 @@ namespace PadelManager.WinForms
 
         private readonly ConnexionResultat _connexion;
 
+        // Distingue une fermeture volontaire ("Se déconnecter") d'une fermeture de fenêtre : le
+        // LoginForm appelant s'en sert pour savoir s'il doit se réafficher (nouvelle connexion)
+        // ou fermer l'application (comportement historique, avant l'ajout du bouton).
+        public bool Deconnexion { get; private set; }
+
         public MembreMenuForm(ConnexionResultat connexion) {
             InitializeComponent();
             _connexion = connexion;
@@ -38,6 +43,11 @@ namespace PadelManager.WinForms
         private void btnReservations_Click(object sender, EventArgs e) {
             using var form = new ReservationsForm(_connexion);
             form.ShowDialog();
+        }
+
+        private void btnDeconnexion_Click(object sender, EventArgs e) {
+            Deconnexion = true;
+            Close();
         }
     }
 }

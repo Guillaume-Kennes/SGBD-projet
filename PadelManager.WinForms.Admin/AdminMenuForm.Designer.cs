@@ -35,6 +35,7 @@ namespace PadelManager.WinForms.Admin
             btnChiffreAffaires = new Button();
             btnStatistiques = new Button();
             btnMembres = new Button();
+            btnDeconnexion = new Button();
             SuspendLayout();
             //
             // lblConnecte
@@ -115,11 +116,22 @@ namespace PadelManager.WinForms.Admin
             btnMembres.UseVisualStyleBackColor = true;
             btnMembres.Click += btnMembres_Click;
             //
+            // btnDeconnexion
+            //
+            btnDeconnexion.Location = new Point(20, 400);
+            btnDeconnexion.Name = "btnDeconnexion";
+            btnDeconnexion.Size = new Size(280, 34);
+            btnDeconnexion.TabIndex = 8;
+            btnDeconnexion.Text = "Se déconnecter";
+            btnDeconnexion.UseVisualStyleBackColor = true;
+            btnDeconnexion.Click += btnDeconnexion_Click;
+            //
             // AdminMenuForm
             //
             AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(340, 400);
+            ClientSize = new Size(340, 460);
+            Controls.Add(btnDeconnexion);
             Controls.Add(btnMembres);
             Controls.Add(btnStatistiques);
             Controls.Add(btnChiffreAffaires);
@@ -144,5 +156,6 @@ namespace PadelManager.WinForms.Admin
         private Button btnChiffreAffaires;
         private Button btnStatistiques;
         private Button btnMembres;
+        private Button btnDeconnexion;
     }
 }
