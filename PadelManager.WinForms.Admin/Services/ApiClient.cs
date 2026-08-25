@@ -75,6 +75,23 @@ public class TerrainRecapResultat {
     public List<int> Numeros { get; set; } = new();
 }
 
+public class StatistiquesResultat {
+    public int SiteId { get; set; }
+    public string NomSite { get; set; } = null!;
+    public int NombreMatchsPublics { get; set; }
+    public int NombreMatchsPrives { get; set; }
+    public decimal TauxOccupation { get; set; }
+    public int MembresActifs { get; set; }
+}
+
+public class MembreAdminResultat {
+    public string Matricule { get; set; } = null!;
+    public string TypeMembre { get; set; } = null!;
+    public int? SiteId { get; set; }
+    public bool DetteActive { get; set; }
+    public bool PenaliteActive { get; set; }
+}
+
 // Résultat enrichi (succès + message d'erreur éventuel) pour les appels dont l'échec doit être
 // expliqué à l'utilisateur, contrairement à ConnexionAsync qui renvoie simplement null.
 public class ApiResult<T> {
@@ -211,6 +228,26 @@ public class ApiClient {
             return null;
 
         return await response.Content.ReadFromJsonAsync<List<ChiffreAffairesResultat>>();
+    }
+
+    public async Task<List<StatistiquesResultat>?> ObtenirStatistiquesAsync(int? siteId) {
+        var url = siteId.HasValue ? $"api/statistiques?siteId={siteId}" : "api/statistiques";
+        var response = await _httpClient.GetAsync(url);
+
+        if (!response.IsSuccessStatusCode)
+            return null;
+
+        return await response.Content.ReadFromJsonAsync<List<StatistiquesResultat>>();
+    }
+
+    public async Task<List<MembreAdminResultat>?> ObtenirMembresAsync(int? siteId) {
+        var url = siteId.HasValue ? $"api/membres?siteId={siteId}" : "api/membres";
+        var response = await _httpClient.GetAsync(url);
+
+        if (!response.IsSuccessStatusCode)
+            return null;
+
+        return await response.Content.ReadFromJsonAsync<List<MembreAdminResultat>>();
     }
 
     private static async Task<string?> LireMessageErreurAsync(HttpResponseMessage response) {
