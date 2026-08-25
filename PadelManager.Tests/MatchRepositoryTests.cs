@@ -17,7 +17,7 @@ public class MatchRepositoryTests {
         var context = CreerContexteEnMemoire();
         context.Sites.Add(new Site { Id = 1, Nom = "Site 1" });
         context.Terrains.Add(new Terrain { Id = 11, SiteId = 1, Numero = 1 });
-        context.Membres.Add(new Membre { Matricule = "G0001", TypeMembre = "GLOBAL" });
+        context.Membres.Add(new Membre { Matricule = "G001", TypeMembre = "GLOBAL" });
         await context.SaveChangesAsync();
         return context;
     }
@@ -27,9 +27,9 @@ public class MatchRepositoryTests {
         // Arrange
         await using var context = await CreerContexteAvecDonneesDeBaseAsync();
         context.Matches.AddRange(
-            new Match { SiteId = 1, TerrainId = 11, DateHeure = new DateTime(2026, 1, 5, 9, 0, 0), Visibilite = "PRIVE", OrganisateurMatricule = "G0001", Statut = "INCOMPLET" },
-            new Match { SiteId = 1, TerrainId = 11, DateHeure = new DateTime(2026, 1, 5, 20, 0, 0), Visibilite = "PRIVE", OrganisateurMatricule = "G0001", Statut = "INCOMPLET" },
-            new Match { SiteId = 1, TerrainId = 11, DateHeure = new DateTime(2026, 1, 6, 9, 0, 0), Visibilite = "PRIVE", OrganisateurMatricule = "G0001", Statut = "INCOMPLET" }); // autre date
+            new Match { SiteId = 1, TerrainId = 11, DateHeure = new DateTime(2026, 1, 5, 9, 0, 0), Visibilite = "PRIVE", OrganisateurMatricule = "G001", Statut = "INCOMPLET" },
+            new Match { SiteId = 1, TerrainId = 11, DateHeure = new DateTime(2026, 1, 5, 20, 0, 0), Visibilite = "PRIVE", OrganisateurMatricule = "G001", Statut = "INCOMPLET" },
+            new Match { SiteId = 1, TerrainId = 11, DateHeure = new DateTime(2026, 1, 6, 9, 0, 0), Visibilite = "PRIVE", OrganisateurMatricule = "G001", Statut = "INCOMPLET" }); // autre date
         await context.SaveChangesAsync();
 
         var repository = new MatchRepository(context);
@@ -46,7 +46,7 @@ public class MatchRepositoryTests {
         // Arrange
         await using var context = await CreerContexteAvecDonneesDeBaseAsync();
         var dateHeure = new DateTime(2026, 1, 5, 9, 0, 0);
-        context.Matches.Add(new Match { SiteId = 1, TerrainId = 11, DateHeure = dateHeure, Visibilite = "PRIVE", OrganisateurMatricule = "G0001", Statut = "INCOMPLET" });
+        context.Matches.Add(new Match { SiteId = 1, TerrainId = 11, DateHeure = dateHeure, Visibilite = "PRIVE", OrganisateurMatricule = "G001", Statut = "INCOMPLET" });
         await context.SaveChangesAsync();
 
         var repository = new MatchRepository(context);
@@ -66,11 +66,11 @@ public class MatchRepositoryTests {
             TerrainId = 11,
             DateHeure = new DateTime(2026, 1, 5, 9, 0, 0),
             Visibilite = "PRIVE",
-            OrganisateurMatricule = "G0001",
+            OrganisateurMatricule = "G001",
             Statut = "INCOMPLET"
         };
         match.Participations.Add(new Participation {
-            MembreMatricule = "G0001",
+            MembreMatricule = "G001",
             DateInscription = DateTime.Now,
             Paiement = new Paiement { MontantParticipation = 15.00m, MontantDetteReportee = 0.00m, DatePaiement = DateTime.Now }
         });
@@ -95,7 +95,7 @@ public class MatchRepositoryTests {
     public async Task GetByIdAsync_MatchExistant_RetourneLeMatch() {
         // Arrange
         await using var context = await CreerContexteAvecDonneesDeBaseAsync();
-        context.Matches.Add(new Match { Id = 1, SiteId = 1, TerrainId = 11, DateHeure = new DateTime(2026, 1, 5, 9, 0, 0), Visibilite = "PUBLIC", OrganisateurMatricule = "G0001", Statut = "INCOMPLET" });
+        context.Matches.Add(new Match { Id = 1, SiteId = 1, TerrainId = 11, DateHeure = new DateTime(2026, 1, 5, 9, 0, 0), Visibilite = "PUBLIC", OrganisateurMatricule = "G001", Statut = "INCOMPLET" });
         await context.SaveChangesAsync();
 
         var repository = new MatchRepository(context);
@@ -124,10 +124,10 @@ public class MatchRepositoryTests {
         await using var context = await CreerContexteAvecDonneesDeBaseAsync();
         var maintenant = new DateTime(2026, 1, 1, 12, 0, 0);
         context.Matches.AddRange(
-            new Match { SiteId = 1, TerrainId = 11, DateHeure = maintenant.AddDays(1), Visibilite = "PUBLIC", OrganisateurMatricule = "G0001", Statut = "INCOMPLET" }, // visible
-            new Match { SiteId = 1, TerrainId = 11, DateHeure = maintenant.AddDays(2), Visibilite = "PRIVE", OrganisateurMatricule = "G0001", Statut = "INCOMPLET" }, // privé
-            new Match { SiteId = 1, TerrainId = 11, DateHeure = maintenant.AddDays(3), Visibilite = "PUBLIC", OrganisateurMatricule = "G0001", Statut = "COMPLET" }, // complet
-            new Match { SiteId = 1, TerrainId = 11, DateHeure = maintenant.AddDays(-1), Visibilite = "PUBLIC", OrganisateurMatricule = "G0001", Statut = "INCOMPLET" }); // déjà passé
+            new Match { SiteId = 1, TerrainId = 11, DateHeure = maintenant.AddDays(1), Visibilite = "PUBLIC", OrganisateurMatricule = "G001", Statut = "INCOMPLET" }, // visible
+            new Match { SiteId = 1, TerrainId = 11, DateHeure = maintenant.AddDays(2), Visibilite = "PRIVE", OrganisateurMatricule = "G001", Statut = "INCOMPLET" }, // privé
+            new Match { SiteId = 1, TerrainId = 11, DateHeure = maintenant.AddDays(3), Visibilite = "PUBLIC", OrganisateurMatricule = "G001", Statut = "COMPLET" }, // complet
+            new Match { SiteId = 1, TerrainId = 11, DateHeure = maintenant.AddDays(-1), Visibilite = "PUBLIC", OrganisateurMatricule = "G001", Statut = "INCOMPLET" }); // déjà passé
         await context.SaveChangesAsync();
 
         var repository = new MatchRepository(context);
@@ -144,9 +144,9 @@ public class MatchRepositoryTests {
     public async Task GetParticipationByIdAsync_ParticipationExistante_RetourneAvecPaiement() {
         // Arrange
         await using var context = await CreerContexteAvecDonneesDeBaseAsync();
-        context.Matches.Add(new Match { Id = 1, SiteId = 1, TerrainId = 11, DateHeure = new DateTime(2026, 1, 5, 9, 0, 0), Visibilite = "PRIVE", OrganisateurMatricule = "G0001", Statut = "INCOMPLET" });
+        context.Matches.Add(new Match { Id = 1, SiteId = 1, TerrainId = 11, DateHeure = new DateTime(2026, 1, 5, 9, 0, 0), Visibilite = "PRIVE", OrganisateurMatricule = "G001", Statut = "INCOMPLET" });
         context.Participations.Add(new Participation {
-            Id = 1, MatchId = 1, MembreMatricule = "G0001", DateInscription = DateTime.Now,
+            Id = 1, MatchId = 1, MembreMatricule = "G001", DateInscription = DateTime.Now,
             Paiement = new Paiement { MontantParticipation = 15.00m, MontantDetteReportee = 0.00m, DatePaiement = DateTime.Now }
         });
         await context.SaveChangesAsync();
@@ -165,8 +165,8 @@ public class MatchRepositoryTests {
     public async Task GetParticipationByIdAsync_EnAttente_RetourneSansPaiement() {
         // Arrange
         await using var context = await CreerContexteAvecDonneesDeBaseAsync();
-        context.Matches.Add(new Match { Id = 1, SiteId = 1, TerrainId = 11, DateHeure = new DateTime(2026, 1, 5, 9, 0, 0), Visibilite = "PRIVE", OrganisateurMatricule = "G0001", Statut = "INCOMPLET" });
-        context.Participations.Add(new Participation { Id = 1, MatchId = 1, MembreMatricule = "L00001", DateInscription = DateTime.Now });
+        context.Matches.Add(new Match { Id = 1, SiteId = 1, TerrainId = 11, DateHeure = new DateTime(2026, 1, 5, 9, 0, 0), Visibilite = "PRIVE", OrganisateurMatricule = "G001", Statut = "INCOMPLET" });
+        context.Participations.Add(new Participation { Id = 1, MatchId = 1, MembreMatricule = "L001", DateInscription = DateTime.Now });
         await context.SaveChangesAsync();
 
         var repository = new MatchRepository(context);
@@ -198,18 +198,18 @@ public class MatchRepositoryTests {
     public async Task GetParticipationsEnAttenteAsync_NeRetourneQueLesParticipationsNonPayeesDuMembre() {
         // Arrange
         await using var context = await CreerContexteAvecDonneesDeBaseAsync();
-        context.Membres.Add(new Membre { Matricule = "L00001", TypeMembre = "LIBRE" });
-        context.Matches.Add(new Match { Id = 1, SiteId = 1, TerrainId = 11, DateHeure = new DateTime(2026, 1, 5, 9, 0, 0), Visibilite = "PRIVE", OrganisateurMatricule = "G0001", Statut = "INCOMPLET" });
+        context.Membres.Add(new Membre { Matricule = "L001", TypeMembre = "LIBRE" });
+        context.Matches.Add(new Match { Id = 1, SiteId = 1, TerrainId = 11, DateHeure = new DateTime(2026, 1, 5, 9, 0, 0), Visibilite = "PRIVE", OrganisateurMatricule = "G001", Statut = "INCOMPLET" });
         context.Participations.AddRange(
-            new Participation { Id = 1, MatchId = 1, MembreMatricule = "L00001", DateInscription = DateTime.Now }, // en attente, du bon membre
-            new Participation { Id = 2, MatchId = 1, MembreMatricule = "L00001", DateInscription = DateTime.Now, Paiement = new Paiement { MontantParticipation = 15.00m, MontantDetteReportee = 0.00m, DatePaiement = DateTime.Now } }, // déjà payée
-            new Participation { Id = 3, MatchId = 1, MembreMatricule = "G0001", DateInscription = DateTime.Now }); // en attente, d'un autre membre
+            new Participation { Id = 1, MatchId = 1, MembreMatricule = "L001", DateInscription = DateTime.Now }, // en attente, du bon membre
+            new Participation { Id = 2, MatchId = 1, MembreMatricule = "L001", DateInscription = DateTime.Now, Paiement = new Paiement { MontantParticipation = 15.00m, MontantDetteReportee = 0.00m, DatePaiement = DateTime.Now } }, // déjà payée
+            new Participation { Id = 3, MatchId = 1, MembreMatricule = "G001", DateInscription = DateTime.Now }); // en attente, d'un autre membre
         await context.SaveChangesAsync();
 
         var repository = new MatchRepository(context);
 
         // Act
-        var resultat = await repository.GetParticipationsEnAttenteAsync("L00001");
+        var resultat = await repository.GetParticipationsEnAttenteAsync("L001");
 
         // Assert
         Assert.Single(resultat);
@@ -221,18 +221,18 @@ public class MatchRepositoryTests {
     public async Task GetReservationsAsync_RetourneLesMatchsOuLeMembreEstOrganisateurOuParticipant() {
         // Arrange
         await using var context = await CreerContexteAvecDonneesDeBaseAsync();
-        context.Membres.Add(new Membre { Matricule = "S00001", TypeMembre = "SITE", SiteId = 1 });
+        context.Membres.Add(new Membre { Matricule = "S001", TypeMembre = "SITE", SiteId = 1 });
         context.Matches.AddRange(
-            new Match { Id = 1, SiteId = 1, TerrainId = 11, DateHeure = new DateTime(2026, 1, 5, 9, 0, 0), Visibilite = "PRIVE", OrganisateurMatricule = "G0001", Statut = "INCOMPLET" }, // organisateur
-            new Match { Id = 2, SiteId = 1, TerrainId = 11, DateHeure = new DateTime(2026, 1, 6, 9, 0, 0), Visibilite = "PUBLIC", OrganisateurMatricule = "S00001", Statut = "INCOMPLET" }, // participant
-            new Match { Id = 3, SiteId = 1, TerrainId = 11, DateHeure = new DateTime(2026, 1, 7, 9, 0, 0), Visibilite = "PUBLIC", OrganisateurMatricule = "S00001", Statut = "INCOMPLET" }); // étranger
-        context.Participations.Add(new Participation { MatchId = 2, MembreMatricule = "G0001", DateInscription = DateTime.Now });
+            new Match { Id = 1, SiteId = 1, TerrainId = 11, DateHeure = new DateTime(2026, 1, 5, 9, 0, 0), Visibilite = "PRIVE", OrganisateurMatricule = "G001", Statut = "INCOMPLET" }, // organisateur
+            new Match { Id = 2, SiteId = 1, TerrainId = 11, DateHeure = new DateTime(2026, 1, 6, 9, 0, 0), Visibilite = "PUBLIC", OrganisateurMatricule = "S001", Statut = "INCOMPLET" }, // participant
+            new Match { Id = 3, SiteId = 1, TerrainId = 11, DateHeure = new DateTime(2026, 1, 7, 9, 0, 0), Visibilite = "PUBLIC", OrganisateurMatricule = "S001", Statut = "INCOMPLET" }); // étranger
+        context.Participations.Add(new Participation { MatchId = 2, MembreMatricule = "G001", DateInscription = DateTime.Now });
         await context.SaveChangesAsync();
 
         var repository = new MatchRepository(context);
 
         // Act
-        var resultat = await repository.GetReservationsAsync("G0001");
+        var resultat = await repository.GetReservationsAsync("G001");
 
         // Assert
         Assert.Equal(2, resultat.Count);
@@ -245,11 +245,11 @@ public class MatchRepositoryTests {
     public async Task GetDetailAsync_MatchExistant_RetourneAvecParticipationsEtPaiements() {
         // Arrange
         await using var context = await CreerContexteAvecDonneesDeBaseAsync();
-        context.Membres.Add(new Membre { Matricule = "L00001", TypeMembre = "LIBRE" });
-        context.Matches.Add(new Match { Id = 1, SiteId = 1, TerrainId = 11, DateHeure = new DateTime(2026, 1, 5, 9, 0, 0), Visibilite = "PRIVE", OrganisateurMatricule = "G0001", Statut = "INCOMPLET" });
+        context.Membres.Add(new Membre { Matricule = "L001", TypeMembre = "LIBRE" });
+        context.Matches.Add(new Match { Id = 1, SiteId = 1, TerrainId = 11, DateHeure = new DateTime(2026, 1, 5, 9, 0, 0), Visibilite = "PRIVE", OrganisateurMatricule = "G001", Statut = "INCOMPLET" });
         context.Participations.AddRange(
-            new Participation { MatchId = 1, MembreMatricule = "G0001", DateInscription = DateTime.Now, Paiement = new Paiement { MontantParticipation = 15.00m, MontantDetteReportee = 0.00m, DatePaiement = DateTime.Now } },
-            new Participation { MatchId = 1, MembreMatricule = "L00001", DateInscription = DateTime.Now });
+            new Participation { MatchId = 1, MembreMatricule = "G001", DateInscription = DateTime.Now, Paiement = new Paiement { MontantParticipation = 15.00m, MontantDetteReportee = 0.00m, DatePaiement = DateTime.Now } },
+            new Participation { MatchId = 1, MembreMatricule = "L001", DateInscription = DateTime.Now });
         await context.SaveChangesAsync();
 
         var repository = new MatchRepository(context);
@@ -261,8 +261,8 @@ public class MatchRepositoryTests {
         Assert.NotNull(resultat);
         Assert.Equal("Site 1", resultat!.Site.Nom);
         Assert.Equal(2, resultat.Participations.Count);
-        Assert.NotNull(resultat.Participations.Single(p => p.MembreMatricule == "G0001").Paiement);
-        Assert.Null(resultat.Participations.Single(p => p.MembreMatricule == "L00001").Paiement);
+        Assert.NotNull(resultat.Participations.Single(p => p.MembreMatricule == "G001").Paiement);
+        Assert.Null(resultat.Participations.Single(p => p.MembreMatricule == "L001").Paiement);
     }
 
     [Fact]

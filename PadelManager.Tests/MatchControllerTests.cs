@@ -47,8 +47,8 @@ public class MatchControllerTests {
     [Fact]
     public async Task CreerPrive_RequeteValide_RetourneOk() {
         // Arrange
-        var requete = new CreerMatchPriveRequestDto { OrganisateurMatricule = "G0001", SiteId = 1, TerrainId = 11, Date = new DateOnly(2026, 1, 5), HeureDebut = new TimeOnly(9, 0) };
-        var dto = new MatchDto { Id = 1, SiteId = 1, TerrainId = 11, OrganisateurMatricule = "G0001", Statut = "INCOMPLET", Visibilite = "PRIVE" };
+        var requete = new CreerMatchPriveRequestDto { OrganisateurMatricule = "G001", SiteId = 1, TerrainId = 11, Date = new DateOnly(2026, 1, 5), HeureDebut = new TimeOnly(9, 0) };
+        var dto = new MatchDto { Id = 1, SiteId = 1, TerrainId = 11, OrganisateurMatricule = "G001", Statut = "INCOMPLET", Visibilite = "PRIVE" };
         _serviceMock.Setup(s => s.CreerMatchPriveAsync(requete)).ReturnsAsync(new CreerMatchResultatDto { Succes = true, Match = dto });
 
         // Act
@@ -75,8 +75,8 @@ public class MatchControllerTests {
     [Fact]
     public async Task CreerPublic_RequeteValide_RetourneOk() {
         // Arrange
-        var requete = new CreerMatchPublicRequestDto { OrganisateurMatricule = "G0001", SiteId = 1, TerrainId = 11, Date = new DateOnly(2026, 1, 5), HeureDebut = new TimeOnly(9, 0) };
-        var dto = new MatchDto { Id = 1, SiteId = 1, TerrainId = 11, OrganisateurMatricule = "G0001", Statut = "INCOMPLET", Visibilite = "PUBLIC" };
+        var requete = new CreerMatchPublicRequestDto { OrganisateurMatricule = "G001", SiteId = 1, TerrainId = 11, Date = new DateOnly(2026, 1, 5), HeureDebut = new TimeOnly(9, 0) };
+        var dto = new MatchDto { Id = 1, SiteId = 1, TerrainId = 11, OrganisateurMatricule = "G001", Statut = "INCOMPLET", Visibilite = "PUBLIC" };
         _serviceMock.Setup(s => s.CreerMatchPublicAsync(requete)).ReturnsAsync(new CreerMatchResultatDto { Succes = true, Match = dto });
 
         // Act
@@ -104,10 +104,10 @@ public class MatchControllerTests {
     public async Task ObtenirPublics_MembreConnu_RetourneOk() {
         // Arrange
         var matchs = new List<MatchPublicDto> { new() { Id = 1, SiteId = 1, NomSite = "Site 1", TerrainId = 11, NumeroTerrain = 1, DateHeure = new DateTime(2026, 1, 5, 9, 0, 0), PlacesRestantes = 2 } };
-        _serviceMock.Setup(s => s.ObtenirMatchsPublicsAsync("G0001")).ReturnsAsync(matchs);
+        _serviceMock.Setup(s => s.ObtenirMatchsPublicsAsync("G001")).ReturnsAsync(matchs);
 
         // Act
-        var resultat = await _controller.ObtenirPublics("G0001");
+        var resultat = await _controller.ObtenirPublics("G001");
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(resultat);
@@ -129,9 +129,9 @@ public class MatchControllerTests {
     [Fact]
     public async Task Rejoindre_RequeteValide_RetourneOk() {
         // Arrange
-        var requete = new RejoindreMatchRequestDto { MembreMatricule = "G0001" };
+        var requete = new RejoindreMatchRequestDto { MembreMatricule = "G001" };
         var attendu = new InscriptionResultatDto { Succes = true, MontantPaye = 15.00m, DetteReglee = false };
-        _serviceMock.Setup(s => s.RejoindreMatchPublicAsync(1, "G0001")).ReturnsAsync(attendu);
+        _serviceMock.Setup(s => s.RejoindreMatchPublicAsync(1, "G001")).ReturnsAsync(attendu);
 
         // Act
         var resultat = await _controller.Rejoindre(1, requete);
@@ -158,10 +158,10 @@ public class MatchControllerTests {
     public async Task ObtenirMontantAPayer_RetourneOk() {
         // Arrange
         var montant = new MontantAPayerDto { MontantParticipation = 15.00m, MontantDette = 45.00m, MontantTotal = 60.00m };
-        _serviceMock.Setup(s => s.ObtenirMontantAPayerAsync("G0001")).ReturnsAsync(montant);
+        _serviceMock.Setup(s => s.ObtenirMontantAPayerAsync("G001")).ReturnsAsync(montant);
 
         // Act
-        var resultat = await _controller.ObtenirMontantAPayer("G0001");
+        var resultat = await _controller.ObtenirMontantAPayer("G001");
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(resultat);
@@ -171,9 +171,9 @@ public class MatchControllerTests {
     [Fact]
     public async Task PayerParticipation_RequeteValide_RetourneOk() {
         // Arrange
-        var requete = new PayerParticipationRequestDto { MembreMatricule = "L00001" };
+        var requete = new PayerParticipationRequestDto { MembreMatricule = "L001" };
         var attendu = new InscriptionResultatDto { Succes = true, MontantPaye = 15.00m, DetteReglee = false };
-        _serviceMock.Setup(s => s.PayerParticipationAsync(1, "L00001")).ReturnsAsync(attendu);
+        _serviceMock.Setup(s => s.PayerParticipationAsync(1, "L001")).ReturnsAsync(attendu);
 
         // Act
         var resultat = await _controller.PayerParticipation(1, requete);
@@ -199,11 +199,11 @@ public class MatchControllerTests {
     [Fact]
     public async Task ObtenirParticipationsEnAttente_MembreConnu_RetourneOk() {
         // Arrange
-        var participations = new List<ParticipationEnAttenteDto> { new() { ParticipationId = 10, MatchId = 1, SiteId = 1, NomSite = "Site 1", TerrainId = 11, NumeroTerrain = 3, DateHeure = new DateTime(2026, 1, 5, 9, 0, 0), OrganisateurMatricule = "S00001" } };
-        _serviceMock.Setup(s => s.ObtenirParticipationsEnAttenteAsync("G0001")).ReturnsAsync(participations);
+        var participations = new List<ParticipationEnAttenteDto> { new() { ParticipationId = 10, MatchId = 1, SiteId = 1, NomSite = "Site 1", TerrainId = 11, NumeroTerrain = 3, DateHeure = new DateTime(2026, 1, 5, 9, 0, 0), OrganisateurMatricule = "S001" } };
+        _serviceMock.Setup(s => s.ObtenirParticipationsEnAttenteAsync("G001")).ReturnsAsync(participations);
 
         // Act
-        var resultat = await _controller.ObtenirParticipationsEnAttente("G0001");
+        var resultat = await _controller.ObtenirParticipationsEnAttente("G001");
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(resultat);
@@ -226,10 +226,10 @@ public class MatchControllerTests {
     public async Task ObtenirReservations_MembreConnu_RetourneOk() {
         // Arrange
         var reservations = new List<ReservationDto> { new() { Id = 1, SiteId = 1, NomSite = "Site 1", TerrainId = 11, NumeroTerrain = 2, DateHeure = new DateTime(2026, 1, 5, 9, 0, 0), Visibilite = "PRIVE", Statut = "INCOMPLET", EstOrganisateur = true } };
-        _serviceMock.Setup(s => s.ObtenirReservationsAsync("G0001")).ReturnsAsync(reservations);
+        _serviceMock.Setup(s => s.ObtenirReservationsAsync("G001")).ReturnsAsync(reservations);
 
         // Act
-        var resultat = await _controller.ObtenirReservations("G0001");
+        var resultat = await _controller.ObtenirReservations("G001");
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(resultat);
@@ -254,12 +254,12 @@ public class MatchControllerTests {
         var detail = new MatchDetailDto {
             Id = 1, SiteId = 1, NomSite = "Site 1", TerrainId = 11, NumeroTerrain = 2,
             DateHeure = new DateTime(2026, 1, 5, 9, 0, 0), Visibilite = "PRIVE", Statut = "INCOMPLET",
-            OrganisateurMatricule = "G0001", Joueurs = new List<JoueurDetailDto> { new() { MembreMatricule = "G0001", Paye = true } }
+            OrganisateurMatricule = "G001", Joueurs = new List<JoueurDetailDto> { new() { MembreMatricule = "G001", Paye = true } }
         };
-        _serviceMock.Setup(s => s.ObtenirDetailAsync(1, "G0001")).ReturnsAsync(detail);
+        _serviceMock.Setup(s => s.ObtenirDetailAsync(1, "G001")).ReturnsAsync(detail);
 
         // Act
-        var resultat = await _controller.ObtenirDetail(1, "G0001");
+        var resultat = await _controller.ObtenirDetail(1, "G001");
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(resultat);

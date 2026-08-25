@@ -21,17 +21,17 @@ public class AuthServiceTests {
     public async Task SeConnecterAsync_MatriculeMembreValide_RetourneDtoMembre() {
         // Arrange : TypeMembreNavigation toujours chargée en pratique (MembreRepository.Include)
         var membre = new Membre {
-            Matricule = "G0001", TypeMembre = "GLOBAL", SiteId = null,
+            Matricule = "G001", TypeMembre = "GLOBAL", SiteId = null,
             TypeMembreNavigation = new TypeMembre { Code = "GLOBAL", Libelle = "Membre global", AnticipationMaxJours = 21, PrefixeMatricule = "G" }
         };
-        _membreRepoMock.Setup(r => r.GetByMatriculeAsync("G0001")).ReturnsAsync(membre);
+        _membreRepoMock.Setup(r => r.GetByMatriculeAsync("G001")).ReturnsAsync(membre);
 
         // Act
-        var resultat = await _authService.SeConnecterAsync("G0001");
+        var resultat = await _authService.SeConnecterAsync("G001");
 
         // Assert
         Assert.NotNull(resultat);
-        Assert.Equal("G0001", resultat!.Matricule);
+        Assert.Equal("G001", resultat!.Matricule);
         Assert.Equal("Membre", resultat.TypeUtilisateur);
         Assert.Equal("GLOBAL", resultat.Type);
         Assert.Null(resultat.SiteId);
@@ -41,12 +41,12 @@ public class AuthServiceTests {
     [Fact]
     public async Task SeConnecterAsync_MatriculeAdministrateurValide_RetourneDtoAdministrateur() {
         // Arrange
-        _membreRepoMock.Setup(r => r.GetByMatriculeAsync("AG0001")).ReturnsAsync((Membre?)null);
-        var admin = new Administrateur { Matricule = "AG0001", Type = "GLOBAL", SiteId = null };
-        _adminRepoMock.Setup(r => r.GetByMatriculeAsync("AG0001")).ReturnsAsync(admin);
+        _membreRepoMock.Setup(r => r.GetByMatriculeAsync("AG01")).ReturnsAsync((Membre?)null);
+        var admin = new Administrateur { Matricule = "AG01", Type = "GLOBAL", SiteId = null };
+        _adminRepoMock.Setup(r => r.GetByMatriculeAsync("AG01")).ReturnsAsync(admin);
 
         // Act
-        var resultat = await _authService.SeConnecterAsync("AG0001");
+        var resultat = await _authService.SeConnecterAsync("AG01");
 
         // Assert
         Assert.NotNull(resultat);
