@@ -37,4 +37,15 @@ public interface IMatchService {
     // Participations d'un membre en attente de paiement, tous matchs privés confondus (EF-bk-007),
     // pour l'écran où il valide sa place en payant. Retourne null si le membre est inconnu.
     Task<List<ParticipationEnAttenteDto>?> ObtenirParticipationsEnAttenteAsync(string membreMatricule);
+
+    // Tous les matchs où le membre est organisateur ou participant, passés ou à venir (EF-bk-013).
+    // Retourne null si le membre est inconnu.
+    Task<List<ReservationDto>?> ObtenirReservationsAsync(string membreMatricule);
+
+    // Détail d'un match (EF-bk-021) : autorisé si le membre est organisateur/participant, ou si le
+    // match est public et dans son périmètre de consultation (EF-bk-012). Retourne null si le
+    // match n'existe pas, si le membre est inconnu, OU si l'un et l'autre existent mais que le
+    // membre n'est pas autorisé à le consulter — un match privé auquel il est étranger ne doit pas
+    // se distinguer, côté client, d'un match qui n'existe simplement pas.
+    Task<MatchDetailDto?> ObtenirDetailAsync(int matchId, string membreMatricule);
 }

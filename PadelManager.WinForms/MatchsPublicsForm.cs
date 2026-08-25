@@ -97,5 +97,18 @@ namespace PadelManager.WinForms
                 btnRejoindre.Enabled = true;
             }
         }
+
+        // EF-bk-021 : détail consultable même sans y avoir encore participé, tant que le match
+        // reste dans le périmètre du membre — déjà garanti ici puisque cette liste elle-même est
+        // filtrée par portée/délai côté serveur (EF-bk-005).
+        private void btnVoirDetail_Click(object sender, EventArgs e) {
+            if (grdMatchs.CurrentRow?.DataBoundItem is not MatchPublicResultat match) {
+                lblMessage.Text = "Veuillez sélectionner un match dans la liste.";
+                return;
+            }
+
+            using var form = new MatchDetailForm(_connexion, match.Id);
+            form.ShowDialog();
+        }
     }
 }

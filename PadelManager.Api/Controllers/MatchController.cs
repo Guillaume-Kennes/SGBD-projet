@@ -86,4 +86,24 @@ public class MatchController : ControllerBase {
 
         return Ok(participations);
     }
+
+    [HttpGet("mes-reservations")]
+    public async Task<IActionResult> ObtenirReservations([FromQuery] string membreMatricule) {
+        var reservations = await _matchService.ObtenirReservationsAsync(membreMatricule);
+        if (reservations == null)
+            return NotFound(new { message = "Membre introuvable." });
+
+        return Ok(reservations);
+    }
+
+    // membreMatricule en query, comme les autres GET de ce contrôleur : nécessaire ici pour
+    // déterminer si le membre est autorisé à consulter ce match précis (EF-bk-021/EF-bk-012).
+    [HttpGet("{id:int}")]
+    public async Task<IActionResult> ObtenirDetail(int id, [FromQuery] string membreMatricule) {
+        var detail = await _matchService.ObtenirDetailAsync(id, membreMatricule);
+        if (detail == null)
+            return NotFound(new { message = "Match introuvable." });
+
+        return Ok(detail);
+    }
 }

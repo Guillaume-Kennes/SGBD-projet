@@ -112,6 +112,40 @@ public class MatchResultat {
     public List<string> Joueurs { get; set; } = new();
 }
 
+// Une réservation dans "Mes réservations" (EF-bk-013) : le membre y est organisateur ou
+// participant, quel que soit le statut ou la visibilité du match.
+public class ReservationResultat {
+    public int Id { get; set; }
+    public int SiteId { get; set; }
+    public string NomSite { get; set; } = null!;
+    public int TerrainId { get; set; }
+    public int NumeroTerrain { get; set; }
+    public DateTime DateHeure { get; set; }
+    public string Visibilite { get; set; } = null!;
+    public string Statut { get; set; } = null!;
+    public bool EstOrganisateur { get; set; }
+}
+
+public class JoueurDetailResultat {
+    public string MembreMatricule { get; set; } = null!;
+    public bool Paye { get; set; }
+}
+
+// Détail d'un match (EF-bk-021), accessible depuis "Mes réservations" comme depuis "Matchs
+// publics".
+public class MatchDetailResultat {
+    public int Id { get; set; }
+    public int SiteId { get; set; }
+    public string NomSite { get; set; } = null!;
+    public int TerrainId { get; set; }
+    public int NumeroTerrain { get; set; }
+    public DateTime DateHeure { get; set; }
+    public string Visibilite { get; set; } = null!;
+    public string Statut { get; set; } = null!;
+    public string OrganisateurMatricule { get; set; } = null!;
+    public List<JoueurDetailResultat> Joueurs { get; set; } = new();
+}
+
 // Résultat enrichi (succès + message d'erreur éventuel) pour les appels dont l'échec doit être
 // expliqué à l'utilisateur, contrairement à ConnexionAsync qui renvoie simplement null.
 public class ApiResult<T> {
@@ -249,6 +283,24 @@ public class ApiClient {
 
         var inscription = await response.Content.ReadFromJsonAsync<InscriptionResultat>();
         return new ApiResult<InscriptionResultat> { Succes = true, Data = inscription };
+    }
+
+    public async Task<List<ReservationResultat>?> ObtenirReservationsAsync(string membreMatricule) {
+        var response = await _httpClient.GetAsync($"api/matchs/mes-reservations?membreMatricule={Uri.EscapeDataString(membreMatricule)}");
+
+        if (!response.IsSuccessStatusCode)
+            return null;
+
+        return await response.Content.ReadFromJsonAsync<List<ReservationResultat>>();
+    }
+
+    public async Task<MatchDetailResultat?> ObtenirDetailMatchAsync(int matchId, string membreMatricule) {
+        var response = await _httpClient.GetAsync($"api/matchs/{matchId}?membreMatricule={Uri.EscapeDataString(membreMatricule)}");
+
+        if (!response.IsSuccessStatusCode)
+            return null;
+
+        return await response.Content.ReadFromJsonAsync<MatchDetailResultat>();
     }
 
     private static async Task<string?> LireMessageErreurAsync(HttpResponseMessage response) {

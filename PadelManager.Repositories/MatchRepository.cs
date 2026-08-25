@@ -147,6 +147,22 @@ public class MatchRepository : IMatchRepository {
             .ToListAsync();
     }
 
+    public async Task<List<Match>> GetReservationsAsync(string membreMatricule) {
+        return await _context.Matches
+            .Include(m => m.Site)
+            .Include(m => m.Terrain)
+            .Where(m => m.OrganisateurMatricule == membreMatricule || m.Participations.Any(p => p.MembreMatricule == membreMatricule))
+            .ToListAsync();
+    }
+
+    public async Task<Match?> GetDetailAsync(int id) {
+        return await _context.Matches
+            .Include(m => m.Site)
+            .Include(m => m.Terrain)
+            .Include(m => m.Participations).ThenInclude(p => p.Paiement)
+            .FirstOrDefaultAsync(m => m.Id == id);
+    }
+
     // Verrouille la ligne MATCH pour toute la durée de la transaction : sérialise les écritures
     // concurrentes de participations sur ce même match, empêchant de dépasser 4 participations
     // payées même en cas de double clic / requêtes simultanées (ENF-010, R-STR-002) — même

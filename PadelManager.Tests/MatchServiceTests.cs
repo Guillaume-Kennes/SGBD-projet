@@ -523,19 +523,21 @@ public class MatchServiceTests {
         Assert.Equal(1, resultat![0].SiteId);
     }
 
+    // R-VAL-003 (CDC v0.11) : l'anticipation maximum par type de membre ne borne que la création
+    // d'un match, jamais la consultation — un membre Libre voit tous les sites, sans aucune limite
+    // de délai, y compris un match très éloigné dans le temps.
     [Fact]
-    public async Task ObtenirMatchsPublicsAsync_MembreLibre_NeVoitQueLes5ProchainsJours() {
+    public async Task ObtenirMatchsPublicsAsync_MembreLibre_VoitSansLimiteDeDelai() {
         _membreRepoMock.Setup(r => r.GetByMatriculeAsync("L00001")).ReturnsAsync(MembreValide("L00001", "LIBRE", null, 5));
         _matchRepoMock.Setup(r => r.GetPublicsIncompletsAsync(It.IsAny<DateTime>())).ReturnsAsync(new List<Match> {
             MatchPublic(1, 1, DateTime.Now.AddDays(5), "G0001"),
-            MatchPublic(2, 1, DateTime.Now.AddDays(6), "G0001")
+            MatchPublic(2, 1, DateTime.Now.AddDays(60), "G0001")
         });
 
         var resultat = await _service.ObtenirMatchsPublicsAsync("L00001");
 
         Assert.NotNull(resultat);
-        Assert.Single(resultat!);
-        Assert.Equal(1, resultat![0].Id);
+        Assert.Equal(2, resultat!.Count);
     }
 
     [Fact]
@@ -625,23 +627,13 @@ public class MatchServiceTests {
         Assert.True(resultat.Succes);
     }
 
-    // R-VAL-003
+    // R-VAL-003 (CDC v0.11) : l'anticipation maximum par type de membre ne borne que la création
+    // d'un match, jamais l'inscription à une place libre — aucune limite de délai pour Libre.
     [Fact]
-    public async Task RejoindreMatchPublicAsync_MembreLibreTropLoin_RetourneEchec() {
+    public async Task RejoindreMatchPublicAsync_MembreLibreSansLimiteDeDelai_Autorise() {
         _membreRepoMock.Setup(r => r.GetByMatriculeAsync("L00001")).ReturnsAsync(MembreValide("L00001", "LIBRE", null, 5));
         _matchRepoMock.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(
-            new Match { Id = 1, SiteId = 1, TerrainId = 11, DateHeure = DateTime.Now.AddDays(6), Visibilite = "PUBLIC", OrganisateurMatricule = "G0001", Statut = "INCOMPLET" });
-
-        var resultat = await _service.RejoindreMatchPublicAsync(1, "L00001");
-
-        Assert.False(resultat.Succes);
-    }
-
-    [Fact]
-    public async Task RejoindreMatchPublicAsync_MembreLibreDansLaFenetre_Autorise() {
-        _membreRepoMock.Setup(r => r.GetByMatriculeAsync("L00001")).ReturnsAsync(MembreValide("L00001", "LIBRE", null, 5));
-        _matchRepoMock.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(
-            new Match { Id = 1, SiteId = 1, TerrainId = 11, DateHeure = DateTime.Now.AddDays(5), Visibilite = "PUBLIC", OrganisateurMatricule = "G0001", Statut = "INCOMPLET" });
+            new Match { Id = 1, SiteId = 1, TerrainId = 11, DateHeure = DateTime.Now.AddDays(60), Visibilite = "PUBLIC", OrganisateurMatricule = "G0001", Statut = "INCOMPLET" });
 
         var resultat = await _service.RejoindreMatchPublicAsync(1, "L00001");
 
@@ -847,5 +839,193 @@ public class MatchServiceTests {
         Assert.Equal(3, resultat[0].NumeroTerrain);
         Assert.Equal("S00001", resultat[0].OrganisateurMatricule);
         Assert.Equal(20, resultat[1].ParticipationId);
+    }
+
+    // --- ObtenirReservationsAsync (EF-bk-013) ---
+
+    [Fact]
+    public async Task ObtenirReservationsAsync_MembreInconnu_RetourneNull() {
+        _membreRepoMock.Setup(r => r.GetByMatriculeAsync("XXXX")).ReturnsAsync((Membre?)null);
+
+        var resultat = await _service.ObtenirReservationsAsync("XXXX");
+
+        Assert.Null(resultat);
+    }
+
+    [Fact]
+    public async Task ObtenirReservationsAsync_MembreConnu_RetourneTrieesParDateDecroissanteAvecRoleOrganisateur() {
+        var site = new Site { Id = 1, Nom = "Site 1" };
+        var terrain = new Terrain { Id = 11, SiteId = 1, Numero = 2 };
+        var matchOrganise = new Match { Id = 1, SiteId = 1, TerrainId = 11, DateHeure = DateTime.Today.AddDays(-3), Visibilite = "PRIVE", OrganisateurMatricule = "G0001", Statut = "TERMINE", Site = site, Terrain = terrain };
+        var matchParticipe = new Match { Id = 2, SiteId = 1, TerrainId = 11, DateHeure = DateTime.Today.AddDays(3), Visibilite = "PUBLIC", OrganisateurMatricule = "S00001", Statut = "INCOMPLET", Site = site, Terrain = terrain };
+        _matchRepoMock.Setup(r => r.GetReservationsAsync("G0001")).ReturnsAsync(new List<Match> { matchOrganise, matchParticipe });
+
+        var resultat = await _service.ObtenirReservationsAsync("G0001");
+
+        Assert.NotNull(resultat);
+        Assert.Equal(2, resultat!.Count);
+        // Le plus proche/imminent en premier (tri décroissant sur la date).
+        Assert.Equal(2, resultat[0].Id);
+        Assert.False(resultat[0].EstOrganisateur);
+        Assert.Equal(1, resultat[1].Id);
+        Assert.True(resultat[1].EstOrganisateur);
+    }
+
+    // "Statut TERMINE d'un match" (calcul hybride, CDC) : tant que le job de clôture (issue #10)
+    // n'a pas scellé le match, l'affichage doit calculer TERMINE dès que l'heure courante dépasse
+    // dateHeure + 1h30, sans jamais réécrire MATCH.statut en base.
+    [Fact]
+    public async Task ObtenirReservationsAsync_MatchPasseNonScelle_AfficheTermineCalcule() {
+        var site = new Site { Id = 1, Nom = "Site 1" };
+        var terrain = new Terrain { Id = 11, SiteId = 1, Numero = 3 };
+        var matchPasse = new Match { Id = 1, SiteId = 1, TerrainId = 11, DateHeure = DateTime.Now.AddDays(-1), Visibilite = "PRIVE", OrganisateurMatricule = "G0001", Statut = "INCOMPLET", Site = site, Terrain = terrain };
+        _matchRepoMock.Setup(r => r.GetReservationsAsync("G0001")).ReturnsAsync(new List<Match> { matchPasse });
+
+        var resultat = await _service.ObtenirReservationsAsync("G0001");
+
+        Assert.Equal("TERMINE", resultat![0].Statut);
+    }
+
+    [Fact]
+    public async Task ObtenirReservationsAsync_MatchDansLeCreneauEnCours_GardeLeStatutBrut() {
+        // Commencé il y a 30 minutes : encore dans le créneau de 1h30, pas terminé.
+        var site = new Site { Id = 1, Nom = "Site 1" };
+        var terrain = new Terrain { Id = 11, SiteId = 1, Numero = 3 };
+        var matchEnCours = new Match { Id = 1, SiteId = 1, TerrainId = 11, DateHeure = DateTime.Now.AddMinutes(-30), Visibilite = "PRIVE", OrganisateurMatricule = "G0001", Statut = "COMPLET", Site = site, Terrain = terrain };
+        _matchRepoMock.Setup(r => r.GetReservationsAsync("G0001")).ReturnsAsync(new List<Match> { matchEnCours });
+
+        var resultat = await _service.ObtenirReservationsAsync("G0001");
+
+        Assert.Equal("COMPLET", resultat![0].Statut);
+    }
+
+    // --- ObtenirDetailAsync (EF-bk-021) ---
+
+    private static Match MatchDetailValide(string visibilite = "PRIVE", string organisateur = "G0001", int siteId = 1, List<Participation>? participations = null) => new() {
+        Id = 1,
+        SiteId = siteId,
+        TerrainId = 11,
+        DateHeure = DateTime.Today.AddDays(3),
+        Visibilite = visibilite,
+        OrganisateurMatricule = organisateur,
+        Statut = "INCOMPLET",
+        Site = new Site { Id = siteId, Nom = "Site " + siteId },
+        Terrain = new Terrain { Id = 11, SiteId = siteId, Numero = 2 },
+        Participations = participations ?? new List<Participation>()
+    };
+
+    [Fact]
+    public async Task ObtenirDetailAsync_MembreInconnu_RetourneNull() {
+        _membreRepoMock.Setup(r => r.GetByMatriculeAsync("XXXX")).ReturnsAsync((Membre?)null);
+
+        var resultat = await _service.ObtenirDetailAsync(1, "XXXX");
+
+        Assert.Null(resultat);
+    }
+
+    [Fact]
+    public async Task ObtenirDetailAsync_MatchInconnu_RetourneNull() {
+        _matchRepoMock.Setup(r => r.GetDetailAsync(99)).ReturnsAsync((Match?)null);
+
+        var resultat = await _service.ObtenirDetailAsync(99, "G0001");
+
+        Assert.Null(resultat);
+    }
+
+    [Fact]
+    public async Task ObtenirDetailAsync_Organisateur_RetourneLeDetail() {
+        var match = MatchDetailValide(organisateur: "G0001");
+        _matchRepoMock.Setup(r => r.GetDetailAsync(1)).ReturnsAsync(match);
+
+        var resultat = await _service.ObtenirDetailAsync(1, "G0001");
+
+        Assert.NotNull(resultat);
+        Assert.Equal("Site 1", resultat!.NomSite);
+        Assert.Equal(2, resultat.NumeroTerrain);
+    }
+
+    // "Statut TERMINE d'un match" (calcul hybride, CDC) — même règle que sur la liste des
+    // réservations.
+    [Fact]
+    public async Task ObtenirDetailAsync_MatchPasseNonScelle_AfficheTermineCalcule() {
+        var match = MatchDetailValide(organisateur: "G0001");
+        match.DateHeure = DateTime.Now.AddDays(-1); // toujours INCOMPLET en base (MatchDetailValide)
+        _matchRepoMock.Setup(r => r.GetDetailAsync(1)).ReturnsAsync(match);
+
+        var resultat = await _service.ObtenirDetailAsync(1, "G0001");
+
+        Assert.Equal("TERMINE", resultat!.Statut);
+    }
+
+    [Fact]
+    public async Task ObtenirDetailAsync_MatchDejaScelleTermine_RestTermine() {
+        var match = MatchDetailValide(organisateur: "G0001");
+        match.Statut = "TERMINE";
+        match.DateHeure = DateTime.Now.AddDays(-30);
+        _matchRepoMock.Setup(r => r.GetDetailAsync(1)).ReturnsAsync(match);
+
+        var resultat = await _service.ObtenirDetailAsync(1, "G0001");
+
+        Assert.Equal("TERMINE", resultat!.Statut);
+    }
+
+    [Fact]
+    public async Task ObtenirDetailAsync_Participant_RetourneLeDetailAvecStatutDePaiement() {
+        var participations = new List<Participation> {
+            new() { MembreMatricule = "G0001", DateInscription = DateTime.Now, Paiement = new Paiement { MontantParticipation = 15.00m, MontantDetteReportee = 0.00m, DatePaiement = DateTime.Now } },
+            new() { MembreMatricule = "L00001", DateInscription = DateTime.Now } // en attente
+        };
+        var match = MatchDetailValide(organisateur: "S00001", participations: participations);
+        _matchRepoMock.Setup(r => r.GetDetailAsync(1)).ReturnsAsync(match);
+
+        var resultat = await _service.ObtenirDetailAsync(1, "L00001");
+
+        Assert.NotNull(resultat);
+        Assert.True(resultat!.Joueurs.Single(j => j.MembreMatricule == "G0001").Paye);
+        Assert.False(resultat.Joueurs.Single(j => j.MembreMatricule == "L00001").Paye);
+    }
+
+    [Fact]
+    public async Task ObtenirDetailAsync_NonImpliqueMatchPrive_RetourneNull() {
+        var match = MatchDetailValide(visibilite: "PRIVE", organisateur: "S00001");
+        _matchRepoMock.Setup(r => r.GetDetailAsync(1)).ReturnsAsync(match);
+
+        var resultat = await _service.ObtenirDetailAsync(1, "G0001");
+
+        Assert.Null(resultat);
+    }
+
+    [Fact]
+    public async Task ObtenirDetailAsync_NonImpliqueMatchPublicGlobal_RetourneLeDetail() {
+        var match = MatchDetailValide(visibilite: "PUBLIC", organisateur: "S00001", siteId: 2);
+        _matchRepoMock.Setup(r => r.GetDetailAsync(1)).ReturnsAsync(match);
+
+        var resultat = await _service.ObtenirDetailAsync(1, "G0001");
+
+        Assert.NotNull(resultat);
+    }
+
+    // R-ACC-002 / EF-bk-012 : même portée que pour rejoindre, mais sans la fenêtre de délai
+    // (R-VAL-003 ne borne que la validation d'une inscription, pas la consultation).
+    [Fact]
+    public async Task ObtenirDetailAsync_NonImpliqueMembreSiteMemeSite_RetourneLeDetail() {
+        _membreRepoMock.Setup(r => r.GetByMatriculeAsync("S00003")).ReturnsAsync(MembreValide("S00003", "SITE", 1, 14));
+        var match = MatchDetailValide(visibilite: "PUBLIC", organisateur: "G0001", siteId: 1);
+        _matchRepoMock.Setup(r => r.GetDetailAsync(1)).ReturnsAsync(match);
+
+        var resultat = await _service.ObtenirDetailAsync(1, "S00003");
+
+        Assert.NotNull(resultat);
+    }
+
+    [Fact]
+    public async Task ObtenirDetailAsync_NonImpliqueMembreSiteAutreSite_RetourneNull() {
+        _membreRepoMock.Setup(r => r.GetByMatriculeAsync("S00003")).ReturnsAsync(MembreValide("S00003", "SITE", 2, 14));
+        var match = MatchDetailValide(visibilite: "PUBLIC", organisateur: "G0001", siteId: 1);
+        _matchRepoMock.Setup(r => r.GetDetailAsync(1)).ReturnsAsync(match);
+
+        var resultat = await _service.ObtenirDetailAsync(1, "S00003");
+
+        Assert.Null(resultat);
     }
 }

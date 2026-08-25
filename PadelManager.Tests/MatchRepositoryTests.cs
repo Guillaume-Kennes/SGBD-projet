@@ -216,4 +216,62 @@ public class MatchRepositoryTests {
         Assert.Equal(1, resultat[0].Id);
         Assert.Equal("Site 1", resultat[0].Match.Site.Nom);
     }
+
+    [Fact]
+    public async Task GetReservationsAsync_RetourneLesMatchsOuLeMembreEstOrganisateurOuParticipant() {
+        // Arrange
+        await using var context = await CreerContexteAvecDonneesDeBaseAsync();
+        context.Membres.Add(new Membre { Matricule = "S00001", TypeMembre = "SITE", SiteId = 1 });
+        context.Matches.AddRange(
+            new Match { Id = 1, SiteId = 1, TerrainId = 11, DateHeure = new DateTime(2026, 1, 5, 9, 0, 0), Visibilite = "PRIVE", OrganisateurMatricule = "G0001", Statut = "INCOMPLET" }, // organisateur
+            new Match { Id = 2, SiteId = 1, TerrainId = 11, DateHeure = new DateTime(2026, 1, 6, 9, 0, 0), Visibilite = "PUBLIC", OrganisateurMatricule = "S00001", Statut = "INCOMPLET" }, // participant
+            new Match { Id = 3, SiteId = 1, TerrainId = 11, DateHeure = new DateTime(2026, 1, 7, 9, 0, 0), Visibilite = "PUBLIC", OrganisateurMatricule = "S00001", Statut = "INCOMPLET" }); // étranger
+        context.Participations.Add(new Participation { MatchId = 2, MembreMatricule = "G0001", DateInscription = DateTime.Now });
+        await context.SaveChangesAsync();
+
+        var repository = new MatchRepository(context);
+
+        // Act
+        var resultat = await repository.GetReservationsAsync("G0001");
+
+        // Assert
+        Assert.Equal(2, resultat.Count);
+        Assert.Contains(resultat, m => m.Id == 1);
+        Assert.Contains(resultat, m => m.Id == 2);
+        Assert.DoesNotContain(resultat, m => m.Id == 3);
+    }
+
+    [Fact]
+    public async Task GetDetailAsync_MatchExistant_RetourneAvecParticipationsEtPaiements() {
+        // Arrange
+        await using var context = await CreerContexteAvecDonneesDeBaseAsync();
+        context.Membres.Add(new Membre { Matricule = "L00001", TypeMembre = "LIBRE" });
+        context.Matches.Add(new Match { Id = 1, SiteId = 1, TerrainId = 11, DateHeure = new DateTime(2026, 1, 5, 9, 0, 0), Visibilite = "PRIVE", OrganisateurMatricule = "G0001", Statut = "INCOMPLET" });
+        context.Participations.AddRange(
+            new Participation { MatchId = 1, MembreMatricule = "G0001", DateInscription = DateTime.Now, Paiement = new Paiement { MontantParticipation = 15.00m, MontantDetteReportee = 0.00m, DatePaiement = DateTime.Now } },
+            new Participation { MatchId = 1, MembreMatricule = "L00001", DateInscription = DateTime.Now });
+        await context.SaveChangesAsync();
+
+        var repository = new MatchRepository(context);
+
+        // Act
+        var resultat = await repository.GetDetailAsync(1);
+
+        // Assert
+        Assert.NotNull(resultat);
+        Assert.Equal("Site 1", resultat!.Site.Nom);
+        Assert.Equal(2, resultat.Participations.Count);
+        Assert.NotNull(resultat.Participations.Single(p => p.MembreMatricule == "G0001").Paiement);
+        Assert.Null(resultat.Participations.Single(p => p.MembreMatricule == "L00001").Paiement);
+    }
+
+    [Fact]
+    public async Task GetDetailAsync_Inexistant_RetourneNull() {
+        await using var context = await CreerContexteAvecDonneesDeBaseAsync();
+        var repository = new MatchRepository(context);
+
+        var resultat = await repository.GetDetailAsync(999);
+
+        Assert.Null(resultat);
+    }
 }

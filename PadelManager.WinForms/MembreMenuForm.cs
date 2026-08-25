@@ -34,5 +34,10 @@ namespace PadelManager.WinForms
             using var form = new ParticipationsEnAttenteForm(_connexion);
             form.ShowDialog();
         }
+
+        private void btnReservations_Click(object sender, EventArgs e) {
+            using var form = new ReservationsForm(_connexion);
+            form.ShowDialog();
+        }
     }
 }
