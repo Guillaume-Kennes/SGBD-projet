@@ -50,6 +50,31 @@ public class FermetureHebdoGlobaleRequete {
     public List<string> JoursFermes { get; set; } = new();
 }
 
+// État d'un match pour la vue administrateur (EF-bk-014) : contrairement aux écrans Membre, les
+// identifiants (match, terrain) sont affichés pour faciliter le contrôle/debug par l'admin.
+public class AdminMatchResultat {
+    public int Id { get; set; }
+    public int SiteId { get; set; }
+    public string NomSite { get; set; } = null!;
+    public int TerrainId { get; set; }
+    public int NumeroTerrain { get; set; }
+    public DateTime DateHeure { get; set; }
+    public string Visibilite { get; set; } = null!;
+    public string Statut { get; set; } = null!;
+}
+
+public class ChiffreAffairesResultat {
+    public int SiteId { get; set; }
+    public string NomSite { get; set; } = null!;
+    public decimal Montant { get; set; }
+}
+
+public class TerrainRecapResultat {
+    public int SiteId { get; set; }
+    public string NomSite { get; set; } = null!;
+    public List<int> Numeros { get; set; } = new();
+}
+
 // Résultat enrichi (succès + message d'erreur éventuel) pour les appels dont l'échec doit être
 // expliqué à l'utilisateur, contrairement à ConnexionAsync qui renvoie simplement null.
 public class ApiResult<T> {
@@ -156,6 +181,36 @@ public class ApiClient {
     public async Task<bool> SupprimerFermetureHebdoGlobaleAsync(int annee) {
         var response = await _httpClient.DeleteAsync($"api/fermetures-hebdo-globales/{annee}");
         return response.IsSuccessStatusCode;
+    }
+
+    public async Task<List<AdminMatchResultat>?> ObtenirEtatMatchsAsync(int? siteId) {
+        var url = siteId.HasValue ? $"api/matchs/etat?siteId={siteId}" : "api/matchs/etat";
+        var response = await _httpClient.GetAsync(url);
+
+        if (!response.IsSuccessStatusCode)
+            return null;
+
+        return await response.Content.ReadFromJsonAsync<List<AdminMatchResultat>>();
+    }
+
+    public async Task<List<TerrainRecapResultat>?> ObtenirRecapitulatifTerrainsAsync(int? siteId) {
+        var url = siteId.HasValue ? $"api/matchs/terrains?siteId={siteId}" : "api/matchs/terrains";
+        var response = await _httpClient.GetAsync(url);
+
+        if (!response.IsSuccessStatusCode)
+            return null;
+
+        return await response.Content.ReadFromJsonAsync<List<TerrainRecapResultat>>();
+    }
+
+    public async Task<List<ChiffreAffairesResultat>?> ObtenirChiffreAffairesAsync(int? siteId) {
+        var url = siteId.HasValue ? $"api/statistiques/chiffre-affaires?siteId={siteId}" : "api/statistiques/chiffre-affaires";
+        var response = await _httpClient.GetAsync(url);
+
+        if (!response.IsSuccessStatusCode)
+            return null;
+
+        return await response.Content.ReadFromJsonAsync<List<ChiffreAffairesResultat>>();
     }
 
     private static async Task<string?> LireMessageErreurAsync(HttpResponseMessage response) {

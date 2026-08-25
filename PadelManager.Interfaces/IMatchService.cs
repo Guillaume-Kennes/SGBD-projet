@@ -48,4 +48,16 @@ public interface IMatchService {
     // membre n'est pas autorisé à le consulter — un match privé auquel il est étranger ne doit pas
     // se distinguer, côté client, d'un match qui n'existe simplement pas.
     Task<MatchDetailDto?> ObtenirDetailAsync(int matchId, string membreMatricule);
+
+    // État de tous les matchs pour la vue administrateur (EF-bk-014), avec statut calculé
+    // dynamiquement (comme EF-bk-013/021) : TERMINE dès que l'heure courante dépasse la fin du
+    // créneau, tant que le match n'est pas déjà scellé en base. Filtrage optionnel par site — la
+    // portée Global/Site elle-même n'est pas vérifiée ici (comme les autres écrans admin de ce
+    // projet).
+    Task<List<AdminMatchDto>> ObtenirEtatMatchsAsync(int? siteId);
+
+    // Récapitulatif des terrains (EF-bk-014, "matchs et terrains") : un élément par site (siteId
+    // fourni -> ce seul site ; omis -> tous les sites), numéros triés. Portée non vérifiée, comme
+    // ObtenirEtatMatchsAsync.
+    Task<List<TerrainRecapDto>> ObtenirRecapitulatifTerrainsAsync(int? siteId);
 }

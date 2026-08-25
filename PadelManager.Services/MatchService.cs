@@ -294,12 +294,52 @@ public class MatchService : IMatchService {
         };
     }
 
+    public async Task<List<AdminMatchDto>> ObtenirEtatMatchsAsync(int? siteId) {
+        var matchs = await _matchRepository.GetTousLesMatchsAsync(siteId);
+
+        return matchs
+            .OrderBy(m => m.DateHeure)
+            .Select(m => new AdminMatchDto {
+                Id = m.Id,
+                SiteId = m.SiteId,
+                NomSite = m.Site.Nom,
+                TerrainId = m.TerrainId,
+                NumeroTerrain = m.Terrain.Numero,
+                DateHeure = m.DateHeure,
+                Visibilite = m.Visibilite,
+                Statut = CalculerStatutAffiche(m)
+            })
+            .ToList();
+    }
+
+    public async Task<List<TerrainRecapDto>> ObtenirRecapitulatifTerrainsAsync(int? siteId) {
+        List<Site> sites;
+        if (siteId.HasValue) {
+            var site = await _siteRepository.GetByIdAsync(siteId.Value);
+            sites = site != null ? new List<Site> { site } : new List<Site>();
+        } else {
+            sites = await _siteRepository.GetAllAsync();
+        }
+
+        var recap = new List<TerrainRecapDto>();
+        foreach (var site in sites) {
+            var terrains = await _terrainRepository.GetBySiteIdAsync(site.Id);
+            recap.Add(new TerrainRecapDto {
+                SiteId = site.Id,
+                NomSite = site.Nom,
+                Numeros = terrains.Select(t => t.Numero).OrderBy(n => n).ToList()
+            });
+        }
+
+        return recap.OrderBy(r => r.SiteId).ToList();
+    }
+
     // "Statut TERMINE d'un match" (calcul hybride, CDC) : tant que le job de clôture quotidien
     // (padel_job, EF-bk-008/issue #10) n'a pas encore scellé le match en base, son statut réel
     // reste INCOMPLET/COMPLET même après l'heure du match — rien ne le met à jour en temps réel.
     // On l'affiche donc calculé à la lecture dès que l'heure courante dépasse la fin du créneau
     // (dateHeure + 1h30, R-STR-004), sans jamais écrire cette valeur en base ; un match déjà
-    // scellé TERMINE reste tel quel. Uniquement pour l'affichage (EF-bk-013/EF-bk-021) — la
+    // scellé TERMINE reste tel quel. Uniquement pour l'affichage (EF-bk-013/021/014) — la
     // création d'un match n'est pas concernée.
     private static string CalculerStatutAffiche(Match match) {
         if (match.Statut == "TERMINE")

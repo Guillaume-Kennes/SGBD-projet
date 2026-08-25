@@ -1028,4 +1028,89 @@ public class MatchServiceTests {
 
         Assert.Null(resultat);
     }
+
+    // --- ObtenirEtatMatchsAsync (EF-bk-014) ---
+
+    [Fact]
+    public async Task ObtenirEtatMatchsAsync_TransmetLeFiltreSiteAuRepository() {
+        _matchRepoMock.Setup(r => r.GetTousLesMatchsAsync(1)).ReturnsAsync(new List<Match>());
+
+        await _service.ObtenirEtatMatchsAsync(1);
+
+        _matchRepoMock.Verify(r => r.GetTousLesMatchsAsync(1), Times.Once);
+    }
+
+    [Fact]
+    public async Task ObtenirEtatMatchsAsync_ExposeLesIdsEtTrieParDateCroissante() {
+        var site = new Site { Id = 1, Nom = "Site 1" };
+        var terrain = new Terrain { Id = 11, SiteId = 1, Numero = 3 };
+        var matchTardif = new Match { Id = 2, SiteId = 1, TerrainId = 11, DateHeure = DateTime.Today.AddDays(5), Visibilite = "PUBLIC", OrganisateurMatricule = "G001", Statut = "INCOMPLET", Site = site, Terrain = terrain };
+        var matchProche = new Match { Id = 1, SiteId = 1, TerrainId = 11, DateHeure = DateTime.Today.AddDays(1), Visibilite = "PRIVE", OrganisateurMatricule = "G001", Statut = "COMPLET", Site = site, Terrain = terrain };
+        _matchRepoMock.Setup(r => r.GetTousLesMatchsAsync(null)).ReturnsAsync(new List<Match> { matchTardif, matchProche });
+
+        var resultat = await _service.ObtenirEtatMatchsAsync(null);
+
+        Assert.Equal(2, resultat.Count);
+        Assert.Equal(1, resultat[0].Id);
+        Assert.Equal(11, resultat[0].TerrainId);
+        Assert.Equal(3, resultat[0].NumeroTerrain);
+        Assert.Equal("COMPLET", resultat[0].Statut);
+        Assert.Equal(2, resultat[1].Id);
+    }
+
+    // "Statut TERMINE d'un match" (calcul hybride, CDC) : même règle que EF-bk-013/021.
+    [Fact]
+    public async Task ObtenirEtatMatchsAsync_MatchPasseNonScelle_AfficheTermineCalcule() {
+        var site = new Site { Id = 1, Nom = "Site 1" };
+        var terrain = new Terrain { Id = 11, SiteId = 1, Numero = 3 };
+        var match = new Match { Id = 1, SiteId = 1, TerrainId = 11, DateHeure = DateTime.Now.AddDays(-1), Visibilite = "PRIVE", OrganisateurMatricule = "G001", Statut = "INCOMPLET", Site = site, Terrain = terrain };
+        _matchRepoMock.Setup(r => r.GetTousLesMatchsAsync(null)).ReturnsAsync(new List<Match> { match });
+
+        var resultat = await _service.ObtenirEtatMatchsAsync(null);
+
+        Assert.Equal("TERMINE", resultat[0].Statut);
+    }
+
+    // --- ObtenirRecapitulatifTerrainsAsync (EF-bk-014) ---
+
+    [Fact]
+    public async Task ObtenirRecapitulatifTerrainsAsync_AvecSiteId_RetourneUnSeulSiteTrieAscendant() {
+        _siteRepoMock.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(new Site { Id = 1, Nom = "Site 1" });
+        _terrainRepoMock.Setup(r => r.GetBySiteIdAsync(1)).ReturnsAsync(new List<Terrain> {
+            new() { Id = 13, SiteId = 1, Numero = 13 },
+            new() { Id = 11, SiteId = 1, Numero = 11 },
+            new() { Id = 12, SiteId = 1, Numero = 12 }
+        });
+
+        var resultat = await _service.ObtenirRecapitulatifTerrainsAsync(1);
+
+        Assert.Single(resultat);
+        Assert.Equal(1, resultat[0].SiteId);
+        Assert.Equal(new List<int> { 11, 12, 13 }, resultat[0].Numeros);
+    }
+
+    [Fact]
+    public async Task ObtenirRecapitulatifTerrainsAsync_SiteInconnu_RetourneListeVide() {
+        _siteRepoMock.Setup(r => r.GetByIdAsync(99)).ReturnsAsync((Site?)null);
+
+        var resultat = await _service.ObtenirRecapitulatifTerrainsAsync(99);
+
+        Assert.Empty(resultat);
+    }
+
+    [Fact]
+    public async Task ObtenirRecapitulatifTerrainsAsync_SansSiteId_RetourneTousLesSites() {
+        _siteRepoMock.Setup(r => r.GetAllAsync()).ReturnsAsync(new List<Site> {
+            new() { Id = 1, Nom = "Site 1" },
+            new() { Id = 2, Nom = "Site 2" }
+        });
+        _terrainRepoMock.Setup(r => r.GetBySiteIdAsync(1)).ReturnsAsync(new List<Terrain> { new() { Id = 11, SiteId = 1, Numero = 11 } });
+        _terrainRepoMock.Setup(r => r.GetBySiteIdAsync(2)).ReturnsAsync(new List<Terrain>()); // site sans terrain (cas limite)
+
+        var resultat = await _service.ObtenirRecapitulatifTerrainsAsync(null);
+
+        Assert.Equal(2, resultat.Count);
+        Assert.Equal(new List<int> { 11 }, resultat[0].Numeros);
+        Assert.Empty(resultat[1].Numeros);
+    }
 }

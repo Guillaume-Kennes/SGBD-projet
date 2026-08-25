@@ -32,5 +32,15 @@ namespace PadelManager.WinForms.Admin
             using var form = new FermetureHebdoGlobaleForm();
             form.ShowDialog();
         }
+
+        private void btnEtatMatchs_Click(object sender, EventArgs e) {
+            using var form = new EtatMatchsForm(_connexion);
+            form.ShowDialog();
+        }
+
+        private void btnChiffreAffaires_Click(object sender, EventArgs e) {
+            using var form = new ChiffreAffairesForm(_connexion);
+            form.ShowDialog();
+        }
     }
 }

@@ -9,6 +9,16 @@ namespace PadelManager.Api.Jobs;
 // automatique — aucun endpoint ni commande ne permet de le relancer manuellement, y compris dans
 // ce code (voir plan de vérification en tests/HTTP, hors périmètre du livrable).
 //
+// Rattrapage au démarrage : ce projet ne tourne pas en continu comme un vrai service hébergé
+// (l'API est arrêtée puis relancée entre les sessions de travail/démo) ; un passage de minuit peut
+// donc avoir été manqué pendant que le processus était éteint. Une exécution immédiate au
+// démarrage, avant la boucle normale vers le minuit suivant, comble ce trou — toujours 100%
+// automatique (déclenchée par le démarrage du processus, jamais par une action extérieure). Aucun
+// suivi de "dernière date exécutée" n'est nécessaire : bascule et clôture sont idempotentes par
+// construction (JobService), donc exécuter le job une fois de plus au démarrage — même si un vrai
+// passage à minuit a déjà eu lieu aujourd'hui pendant que l'app tournait — ne rebascule ni ne
+// pénalise jamais deux fois le même match.
+//
 // Utilise sa propre connexion (padel_job, ENF-004) plutôt que le DbContext injecté par défaut de
 // l'application (padel_api, réservé aux couches déclenchées par un utilisateur) : les deux comptes
 // SQL sont dédiés à des processus distincts et n'ont pas les mêmes droits — d'où la construction
@@ -24,6 +34,9 @@ public class JobQuotidienHostedService : BackgroundService {
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
+        if (!stoppingToken.IsCancellationRequested)
+            await ExecuterAsync();
+
         while (!stoppingToken.IsCancellationRequested) {
             var maintenant = DateTime.Now;
             var prochainMinuit = maintenant.Date.AddDays(1);
