@@ -166,6 +166,26 @@ public class StatistiqueServiceTests {
     }
 
     [Fact]
+    public async Task ObtenirStatistiquesAsync_ExclutUnMatchProgrammePlusTardAujourdHui() {
+        // Un match daté aujourd'hui mais à une heure future (pas encore joué) ne doit pas compter
+        // dans le taux d'occupation, même si sa DATE seule est bien dans la fenêtre de 60 jours —
+        // la borne haute doit porter sur l'instant exact (DateTime.Now), pas sur la date du jour.
+        _siteRepoMock.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(new Site { Id = 1, Nom = "Site 1" });
+        _matchRepoMock.Setup(r => r.GetTousLesMatchsAsync(1)).ReturnsAsync(new List<Match> {
+            MatchPourSite(1, 1, "PUBLIC"), // déjà passé au moment du calcul
+            MatchPourSite(2, 1, "PUBLIC", DateTime.Now.AddHours(3)) // plus tard aujourd'hui, pas encore joué
+        });
+        _disponibiliteRepoMock.Setup(r => r.GetBySiteAndPeriodeAsync(1, It.IsAny<DateOnly>(), It.IsAny<DateOnly>())).ReturnsAsync(DisponibilitesPourSite(1, 10));
+        _terrainRepoMock.Setup(r => r.GetBySiteIdAsync(1)).ReturnsAsync(new List<Terrain> { new() { Id = 11, SiteId = 1, Numero = 1 } });
+        _statistiqueRepoMock.Setup(r => r.GetPaiementsAsync(1)).ReturnsAsync(new List<Paiement>());
+
+        var resultat = await _service.ObtenirStatistiquesAsync(1);
+
+        Assert.Equal(2, resultat[0].NombreMatchsPublics); // les deux comptent pour publics/privés
+        Assert.Equal(0.10m, resultat[0].TauxOccupation); // seul le match déjà passé (1 / 10)
+    }
+
+    [Fact]
     public async Task ObtenirStatistiquesAsync_AucunCreneauOuTerrain_TauxAZeroSansException() {
         _siteRepoMock.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(new Site { Id = 1, Nom = "Site 1" });
         _matchRepoMock.Setup(r => r.GetTousLesMatchsAsync(1)).ReturnsAsync(new List<Match>());

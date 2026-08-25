@@ -56,7 +56,8 @@ public class StatistiqueService : IStatistiqueService {
         var matchs = await _matchRepository.GetTousLesMatchsAsync(siteId);
         var paiements = await _statistiqueRepository.GetPaiementsAsync(siteId);
 
-        var dateFin = DateOnly.FromDateTime(DateTime.Today);
+        var maintenant = DateTime.Now;
+        var dateFin = DateOnly.FromDateTime(maintenant);
         var dateDebut = dateFin.AddDays(-JoursFenetreOccupation);
 
         var resultat = new List<StatistiquesDto>();
@@ -67,10 +68,11 @@ public class StatistiqueService : IStatistiqueService {
 
             // Taux d'occupation : uniquement sur la fenêtre récente (matchs comme créneaux), pas
             // sur les comptes publics/privés ci-dessus qui restent sur l'ensemble des données.
-            var matchsRecents = matchsDuSite.Count(m => {
-                var date = DateOnly.FromDateTime(m.DateHeure);
-                return date >= dateDebut && date <= dateFin;
-            });
+            // Borne haute sur l'instant exact (DateTime.Now), pas sur la date du jour seule : un
+            // match programmé plus tard aujourd'hui n'a pas encore eu lieu et ne doit pas gonfler
+            // l'occupation (contrairement à la borne basse, où le jour entier -60j convient).
+            var matchsRecents = matchsDuSite.Count(m =>
+                m.DateHeure >= dateDebut.ToDateTime(TimeOnly.MinValue) && m.DateHeure <= maintenant);
             var creneauxRecents = (await _disponibiliteRepository.GetBySiteAndPeriodeAsync(site.Id, dateDebut, dateFin)).Count;
             var nbTerrains = (await _terrainRepository.GetBySiteIdAsync(site.Id)).Count;
             var capacite = creneauxRecents * nbTerrains;
