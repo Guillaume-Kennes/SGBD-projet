@@ -92,7 +92,7 @@ namespace PadelManager.WinForms.Admin
             grdStatistiques.ReadOnly = true;
             grdStatistiques.RowHeadersWidth = 25;
             grdStatistiques.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-            grdStatistiques.Size = new Size(650, 240);
+            grdStatistiques.Size = new Size(690, 240);
             grdStatistiques.TabIndex = 4;
             //
             // colNomSite
@@ -101,6 +101,7 @@ namespace PadelManager.WinForms.Admin
             colNomSite.HeaderText = "Site";
             colNomSite.Name = "colNomSite";
             colNomSite.ReadOnly = true;
+            colNomSite.Width = 90;
             //
             // colNombreMatchsPublics
             //
@@ -108,6 +109,7 @@ namespace PadelManager.WinForms.Admin
             colNombreMatchsPublics.HeaderText = "Matchs publics";
             colNombreMatchsPublics.Name = "colNombreMatchsPublics";
             colNombreMatchsPublics.ReadOnly = true;
+            colNombreMatchsPublics.Width = 140;
             //
             // colNombreMatchsPrives
             //
@@ -115,6 +117,7 @@ namespace PadelManager.WinForms.Admin
             colNombreMatchsPrives.HeaderText = "Matchs privés";
             colNombreMatchsPrives.Name = "colNombreMatchsPrives";
             colNombreMatchsPrives.ReadOnly = true;
+            colNombreMatchsPrives.Width = 140;
             //
             // colTauxOccupation
             //
@@ -122,6 +125,7 @@ namespace PadelManager.WinForms.Admin
             colTauxOccupation.HeaderText = "Taux d'occupation";
             colTauxOccupation.Name = "colTauxOccupation";
             colTauxOccupation.ReadOnly = true;
+            colTauxOccupation.Width = 170;
             //
             // colMembresActifs
             //
@@ -129,12 +133,13 @@ namespace PadelManager.WinForms.Admin
             colMembresActifs.HeaderText = "Membres actifs";
             colMembresActifs.Name = "colMembresActifs";
             colMembresActifs.ReadOnly = true;
+            colMembresActifs.Width = 140;
             //
             // lblMessage
             //
             lblMessage.AutoSize = true;
             lblMessage.Location = new Point(20, 385);
-            lblMessage.MaximumSize = new Size(650, 0);
+            lblMessage.MaximumSize = new Size(690, 0);
             lblMessage.Name = "lblMessage";
             lblMessage.Size = new Size(0, 20);
             lblMessage.TabIndex = 5;
@@ -143,7 +148,7 @@ namespace PadelManager.WinForms.Admin
             //
             AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(690, 420);
+            ClientSize = new Size(730, 420);
             Controls.Add(lblMessage);
             Controls.Add(grdStatistiques);
             Controls.Add(btnRafraichir);
