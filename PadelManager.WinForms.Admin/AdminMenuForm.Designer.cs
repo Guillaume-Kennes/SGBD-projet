@@ -31,6 +31,8 @@ namespace PadelManager.WinForms.Admin
             btnHoraires = new Button();
             btnFermeturesPonctuelles = new Button();
             btnFermetureHebdoGlobale = new Button();
+            btnEtatMatchs = new Button();
+            btnChiffreAffaires = new Button();
             SuspendLayout();
             //
             // lblConnecte
@@ -71,11 +73,33 @@ namespace PadelManager.WinForms.Admin
             btnFermetureHebdoGlobale.UseVisualStyleBackColor = true;
             btnFermetureHebdoGlobale.Click += btnFermetureHebdoGlobale_Click;
             //
+            // btnEtatMatchs
+            //
+            btnEtatMatchs.Location = new Point(20, 205);
+            btnEtatMatchs.Name = "btnEtatMatchs";
+            btnEtatMatchs.Size = new Size(280, 34);
+            btnEtatMatchs.TabIndex = 4;
+            btnEtatMatchs.Text = "État des matchs et terrains";
+            btnEtatMatchs.UseVisualStyleBackColor = true;
+            btnEtatMatchs.Click += btnEtatMatchs_Click;
+            //
+            // btnChiffreAffaires
+            //
+            btnChiffreAffaires.Location = new Point(20, 250);
+            btnChiffreAffaires.Name = "btnChiffreAffaires";
+            btnChiffreAffaires.Size = new Size(280, 34);
+            btnChiffreAffaires.TabIndex = 5;
+            btnChiffreAffaires.Text = "Chiffre d'affaires";
+            btnChiffreAffaires.UseVisualStyleBackColor = true;
+            btnChiffreAffaires.Click += btnChiffreAffaires_Click;
+            //
             // AdminMenuForm
             //
             AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(340, 230);
+            ClientSize = new Size(340, 310);
+            Controls.Add(btnChiffreAffaires);
+            Controls.Add(btnEtatMatchs);
             Controls.Add(btnFermetureHebdoGlobale);
             Controls.Add(btnFermeturesPonctuelles);
             Controls.Add(btnHoraires);
@@ -92,5 +116,7 @@ namespace PadelManager.WinForms.Admin
         private Button btnHoraires;
         private Button btnFermeturesPonctuelles;
         private Button btnFermetureHebdoGlobale;
+        private Button btnEtatMatchs;
+        private Button btnChiffreAffaires;
     }
 }
