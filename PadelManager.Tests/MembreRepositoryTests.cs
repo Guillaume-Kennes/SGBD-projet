@@ -45,5 +45,45 @@ public class MembreRepositoryTests {
         // Assert
         Assert.Null(resultat);
     }
+
+    private static async Task<PadelManagerDbContext> CreerContexteAvecMembresVariesAsync() {
+        var context = CreerContexteEnMemoire();
+        context.Membres.AddRange(
+            new Membre { Matricule = "G001", TypeMembre = "GLOBAL", SiteId = null },
+            new Membre { Matricule = "L001", TypeMembre = "LIBRE", SiteId = null },
+            new Membre { Matricule = "S001", TypeMembre = "SITE", SiteId = 1 },
+            new Membre { Matricule = "S002", TypeMembre = "SITE", SiteId = 2 });
+        await context.SaveChangesAsync();
+        return context;
+    }
+
+    [Fact]
+    public async Task GetTousAsync_SansSiteId_RetourneTousLesMembresTousTypes() {
+        // Arrange
+        await using var context = await CreerContexteAvecMembresVariesAsync();
+        var repository = new MembreRepository(context);
+
+        // Act
+        var resultat = await repository.GetTousAsync(null);
+
+        // Assert
+        Assert.Equal(4, resultat.Count);
+    }
+
+    [Fact]
+    public async Task GetTousAsync_AvecSiteId_NeRetourneQueLesMembresSiteDeCeSite() {
+        // Arrange : G001 (Global) et L001 (Libre) ne sont rattachés à aucun site, ils
+        // n'apparaissent donc jamais dans une vue Site (EF-bk-017), même si on filtrait par
+        // coïncidence sur siteId=1 : seul S001 doit apparaître, pas G001/L001/S002.
+        await using var context = await CreerContexteAvecMembresVariesAsync();
+        var repository = new MembreRepository(context);
+
+        // Act
+        var resultat = await repository.GetTousAsync(1);
+
+        // Assert
+        Assert.Single(resultat);
+        Assert.Equal("S001", resultat[0].Matricule);
+    }
 }
 

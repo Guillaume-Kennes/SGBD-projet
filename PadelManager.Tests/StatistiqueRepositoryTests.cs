@@ -56,4 +56,31 @@ public class StatistiqueRepositoryTests {
         Assert.Single(resultat);
         Assert.Equal(1, resultat[0].Participation.MatchId);
     }
+
+    [Fact]
+    public async Task GetParticipationsAsync_SansFiltre_RetourneToutesLesParticipations() {
+        await using var context = await CreerContexteAvecDeuxSitesAsync();
+        var repository = new StatistiqueRepository(context);
+
+        var resultat = await repository.GetParticipationsAsync(null);
+
+        Assert.Equal(2, resultat.Count);
+    }
+
+    [Fact]
+    public async Task GetParticipationsAsync_AvecFiltreSite_NeRetourneQueCeSite_MemeNonPayees() {
+        // Arrange : une participation NON payée (pas de PAIEMENT) doit quand même être retournée
+        // ("peu importe payée ou non", EF-bk-016) — contrairement à GetPaiementsAsync.
+        await using var context = await CreerContexteAvecDeuxSitesAsync();
+        context.Membres.Add(new Membre { Matricule = "L001", TypeMembre = "LIBRE" });
+        context.Participations.Add(new Participation { Id = 3, MatchId = 1, MembreMatricule = "L001", DateInscription = DateTime.Now });
+        await context.SaveChangesAsync();
+
+        var repository = new StatistiqueRepository(context);
+
+        var resultat = await repository.GetParticipationsAsync(1);
+
+        Assert.Equal(2, resultat.Count);
+        Assert.Contains(resultat, p => p.MembreMatricule == "L001");
+    }
 }
