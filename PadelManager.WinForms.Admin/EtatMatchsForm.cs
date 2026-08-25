@@ -95,10 +95,10 @@ namespace PadelManager.WinForms.Admin
 
             if (!tousLesSites) {
                 var r = recap[0];
-                return $"Terrains : {r.TerrainIds.Count} ({string.Join(", ", r.TerrainIds)})";
+                return $"Terrains : {r.Numeros.Count} ({string.Join(", ", r.Numeros)})";
             }
 
-            return string.Join(" · ", recap.Select(r => $"{r.NomSite} : {r.TerrainIds.Count} ({FormatterPlage(r.TerrainIds)})"));
+            return string.Join(" · ", recap.Select(r => $"{r.NomSite} : {r.Numeros.Count} ({FormatterPlage(r.Numeros)})"));
         }
 
         private static string FormatterPlage(List<int> numeros) {

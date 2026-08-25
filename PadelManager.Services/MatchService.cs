@@ -327,7 +327,7 @@ public class MatchService : IMatchService {
             recap.Add(new TerrainRecapDto {
                 SiteId = site.Id,
                 NomSite = site.Nom,
-                TerrainIds = terrains.Select(t => t.Id).OrderBy(id => id).ToList()
+                Numeros = terrains.Select(t => t.Numero).OrderBy(n => n).ToList()
             });
         }
 

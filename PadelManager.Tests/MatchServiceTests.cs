@@ -1086,7 +1086,7 @@ public class MatchServiceTests {
 
         Assert.Single(resultat);
         Assert.Equal(1, resultat[0].SiteId);
-        Assert.Equal(new List<int> { 11, 12, 13 }, resultat[0].TerrainIds);
+        Assert.Equal(new List<int> { 11, 12, 13 }, resultat[0].Numeros);
     }
 
     [Fact]
@@ -1110,7 +1110,7 @@ public class MatchServiceTests {
         var resultat = await _service.ObtenirRecapitulatifTerrainsAsync(null);
 
         Assert.Equal(2, resultat.Count);
-        Assert.Equal(new List<int> { 11 }, resultat[0].TerrainIds);
-        Assert.Empty(resultat[1].TerrainIds);
+        Assert.Equal(new List<int> { 11 }, resultat[0].Numeros);
+        Assert.Empty(resultat[1].Numeros);
     }
 }

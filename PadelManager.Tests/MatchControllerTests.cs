@@ -295,7 +295,7 @@ public class MatchControllerTests {
     [Fact]
     public async Task ObtenirRecapitulatifTerrains_RetourneOk() {
         // Arrange
-        var recap = new List<TerrainRecapDto> { new() { SiteId = 1, NomSite = "Site 1", TerrainIds = new List<int> { 11, 12, 13 } } };
+        var recap = new List<TerrainRecapDto> { new() { SiteId = 1, NomSite = "Site 1", Numeros = new List<int> { 11, 12, 13 } } };
         _serviceMock.Setup(s => s.ObtenirRecapitulatifTerrainsAsync(1)).ReturnsAsync(recap);
 
         // Act

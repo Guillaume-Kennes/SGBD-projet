@@ -72,7 +72,7 @@ public class ChiffreAffairesResultat {
 public class TerrainRecapResultat {
     public int SiteId { get; set; }
     public string NomSite { get; set; } = null!;
-    public List<int> TerrainIds { get; set; } = new();
+    public List<int> Numeros { get; set; } = new();
 }
 
 // Résultat enrichi (succès + message d'erreur éventuel) pour les appels dont l'échec doit être
