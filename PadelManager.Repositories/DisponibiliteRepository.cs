@@ -33,8 +33,4 @@ public class DisponibiliteRepository : IDisponibiliteRepository {
 
         await _context.SaveChangesAsync();
     }
-
-    public async Task<int> CountBySiteAsync(int siteId) {
-        return await _context.Disponibilites.CountAsync(d => d.SiteId == siteId);
-    }
 }

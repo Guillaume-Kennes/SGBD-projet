@@ -11,8 +11,4 @@ public interface IDisponibiliteRepository {
 
     // Supprime toutes les disponibilités existantes du site pour l'année, puis insère les nouvelles.
     Task RemplacerPourSiteEtAnneeAsync(int siteId, short annee, List<Disponibilite> nouvelles);
-
-    // Nombre total de créneaux DISPONIBILITE du site, toutes dates confondues (EF-bk-016, taux
-    // d'occupation) — pas de filtre de période, sur l'ensemble de ce qui est en base.
-    Task<int> CountBySiteAsync(int siteId);
 }

@@ -4,6 +4,12 @@ using PadelManager.Models.Dtos;
 namespace PadelManager.Services;
 
 public class StatistiqueService : IStatistiqueService {
+    // Fenêtre glissante récente pour le taux d'occupation (EF-bk-016) : sur l'ensemble du
+    // calendrier DISPONIBILITE (généré 2 ans à l'avance), le taux serait écrasé par la faible
+    // proportion de créneaux déjà pris, sans rapport avec l'usage réel récent. 60 jours, contrairement
+    // aux matchs publics/privés et aux membres actifs, qui restent sur l'ensemble des données.
+    private const int JoursFenetreOccupation = 60;
+
     private readonly ISiteRepository _siteRepository;
     private readonly ITerrainRepository _terrainRepository;
     private readonly IMatchRepository _matchRepository;
@@ -48,7 +54,10 @@ public class StatistiqueService : IStatistiqueService {
         var sites = await ObtenirSitesConcernesAsync(siteId);
 
         var matchs = await _matchRepository.GetTousLesMatchsAsync(siteId);
-        var participations = await _statistiqueRepository.GetParticipationsAsync(siteId);
+        var paiements = await _statistiqueRepository.GetPaiementsAsync(siteId);
+
+        var dateFin = DateOnly.FromDateTime(DateTime.Today);
+        var dateDebut = dateFin.AddDays(-JoursFenetreOccupation);
 
         var resultat = new List<StatistiquesDto>();
         foreach (var site in sites) {
@@ -56,19 +65,23 @@ public class StatistiqueService : IStatistiqueService {
             var nbPublics = matchsDuSite.Count(m => m.Visibilite == "PUBLIC");
             var nbPrives = matchsDuSite.Count(m => m.Visibilite == "PRIVE");
 
-            // Approximation volontairement simple (CDC : "set raisonnable et classique, pas très
-            // poussé"), sur l'ensemble de la période disponible en base — pas de fenêtre
-            // temporelle à affiner.
-            var nbCreneaux = await _disponibiliteRepository.CountBySiteAsync(site.Id);
+            // Taux d'occupation : uniquement sur la fenêtre récente (matchs comme créneaux), pas
+            // sur les comptes publics/privés ci-dessus qui restent sur l'ensemble des données.
+            var matchsRecents = matchsDuSite.Count(m => {
+                var date = DateOnly.FromDateTime(m.DateHeure);
+                return date >= dateDebut && date <= dateFin;
+            });
+            var creneauxRecents = (await _disponibiliteRepository.GetBySiteAndPeriodeAsync(site.Id, dateDebut, dateFin)).Count;
             var nbTerrains = (await _terrainRepository.GetBySiteIdAsync(site.Id)).Count;
-            var capacite = nbCreneaux * nbTerrains;
-            var tauxOccupation = capacite > 0 ? (decimal)(nbPublics + nbPrives) / capacite : 0m;
+            var capacite = creneauxRecents * nbTerrains;
+            var tauxOccupation = capacite > 0 ? (decimal)matchsRecents / capacite : 0m;
 
-            // Membres actifs : peu importe payée ou non (R-ACC-006 ne bloque que la création, pas
-            // la présence dans une statistique de fréquentation).
-            var membresActifs = participations
-                .Where(p => p.Match.SiteId == site.Id)
-                .Select(p => p.MembreMatricule)
+            // Membres actifs : uniquement une participation PAYÉE (jointure PAIEMENT) — une
+            // participation impayée ne représente pas un membre ayant réellement joué, et ça rend
+            // la stat indépendante du passage ou non du job de bascule sur les places impayées.
+            var membresActifs = paiements
+                .Where(p => p.Participation.Match.SiteId == site.Id)
+                .Select(p => p.Participation.MembreMatricule)
                 .Distinct()
                 .Count();
 

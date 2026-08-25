@@ -21,13 +21,4 @@ public class StatistiqueRepository : IStatistiqueRepository {
 
         return await query.ToListAsync();
     }
-
-    public async Task<List<Participation>> GetParticipationsAsync(int? siteId) {
-        var query = _context.Participations.Include(p => p.Match).AsQueryable();
-
-        if (siteId.HasValue)
-            query = query.Where(p => p.Match.SiteId == siteId.Value);
-
-        return await query.ToListAsync();
-    }
 }
