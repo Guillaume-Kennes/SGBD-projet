@@ -80,22 +80,44 @@ public class StatistiqueServiceTests {
 
     // --- ObtenirStatistiquesAsync (EF-bk-016) ---
 
-    private static Participation ParticipationPourSite(int matchId, int siteId, string membre) {
+    // Toujours dans la fenêtre des 60 jours (par défaut DateTime.Now), sauf précision contraire.
+    private static Match MatchPourSite(int matchId, int siteId, string visibilite, DateTime? dateHeure = null) {
+        return new Match {
+            Id = matchId, SiteId = siteId, TerrainId = 11, DateHeure = dateHeure ?? DateTime.Now,
+            Visibilite = visibilite, OrganisateurMatricule = "G001", Statut = "INCOMPLET"
+        };
+    }
+
+    private static List<Disponibilite> DisponibilitesPourSite(int siteId, int nombre) {
+        return Enumerable.Range(0, nombre)
+            .Select(i => new Disponibilite {
+                SiteId = siteId, Date = DateOnly.FromDateTime(DateTime.Today),
+                HeureDebut = new TimeOnly(8, 0), HeureFin = new TimeOnly(9, 30)
+            })
+            .ToList();
+    }
+
+    // Variante de PaiementPourSite avec matricule paramétrable, pour les tests de membres actifs.
+    private static Paiement PaiementPourSiteEtMembre(int matchId, int siteId, string membre) {
         var match = new Match { Id = matchId, SiteId = siteId, TerrainId = 11, DateHeure = DateTime.Now, Visibilite = "PUBLIC", OrganisateurMatricule = "G001", Statut = "INCOMPLET" };
-        return new Participation { MatchId = matchId, MembreMatricule = membre, DateInscription = DateTime.Now, Match = match };
+        var participation = new Participation { MatchId = matchId, MembreMatricule = membre, DateInscription = DateTime.Now, Match = match };
+        return new Paiement {
+            Participation = participation, MontantParticipation = 15.00m, MontantDetteReportee = 0.00m,
+            MontantTotal = 15.00m, DatePaiement = DateTime.Now
+        };
     }
 
     [Fact]
     public async Task ObtenirStatistiquesAsync_ComptePublicsEtPrivesSeparement() {
         _siteRepoMock.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(new Site { Id = 1, Nom = "Site 1" });
         _matchRepoMock.Setup(r => r.GetTousLesMatchsAsync(1)).ReturnsAsync(new List<Match> {
-            new() { Id = 1, SiteId = 1, TerrainId = 11, DateHeure = DateTime.Now, Visibilite = "PUBLIC", OrganisateurMatricule = "G001", Statut = "INCOMPLET" },
-            new() { Id = 2, SiteId = 1, TerrainId = 11, DateHeure = DateTime.Now, Visibilite = "PUBLIC", OrganisateurMatricule = "G001", Statut = "INCOMPLET" },
-            new() { Id = 3, SiteId = 1, TerrainId = 11, DateHeure = DateTime.Now, Visibilite = "PRIVE", OrganisateurMatricule = "G001", Statut = "INCOMPLET" }
+            MatchPourSite(1, 1, "PUBLIC"),
+            MatchPourSite(2, 1, "PUBLIC"),
+            MatchPourSite(3, 1, "PRIVE")
         });
-        _disponibiliteRepoMock.Setup(r => r.CountBySiteAsync(1)).ReturnsAsync(100);
+        _disponibiliteRepoMock.Setup(r => r.GetBySiteAndPeriodeAsync(1, It.IsAny<DateOnly>(), It.IsAny<DateOnly>())).ReturnsAsync(DisponibilitesPourSite(1, 100));
         _terrainRepoMock.Setup(r => r.GetBySiteIdAsync(1)).ReturnsAsync(new List<Terrain> { new() { Id = 11, SiteId = 1, Numero = 1 } });
-        _statistiqueRepoMock.Setup(r => r.GetParticipationsAsync(1)).ReturnsAsync(new List<Participation>());
+        _statistiqueRepoMock.Setup(r => r.GetPaiementsAsync(1)).ReturnsAsync(new List<Paiement>());
 
         var resultat = await _service.ObtenirStatistiquesAsync(1);
 
@@ -106,18 +128,18 @@ public class StatistiqueServiceTests {
 
     [Fact]
     public async Task ObtenirStatistiquesAsync_CalculeLeTauxDOccupation() {
-        // 3 matchs / (10 créneaux x 2 terrains = 20) = 0.15
+        // 3 matchs récents / (10 créneaux x 2 terrains = 20) = 0.15
         _siteRepoMock.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(new Site { Id = 1, Nom = "Site 1" });
         _matchRepoMock.Setup(r => r.GetTousLesMatchsAsync(1)).ReturnsAsync(new List<Match> {
-            new() { Id = 1, SiteId = 1, TerrainId = 11, DateHeure = DateTime.Now, Visibilite = "PUBLIC", OrganisateurMatricule = "G001", Statut = "INCOMPLET" },
-            new() { Id = 2, SiteId = 1, TerrainId = 11, DateHeure = DateTime.Now, Visibilite = "PUBLIC", OrganisateurMatricule = "G001", Statut = "INCOMPLET" },
-            new() { Id = 3, SiteId = 1, TerrainId = 11, DateHeure = DateTime.Now, Visibilite = "PRIVE", OrganisateurMatricule = "G001", Statut = "INCOMPLET" }
+            MatchPourSite(1, 1, "PUBLIC"),
+            MatchPourSite(2, 1, "PUBLIC"),
+            MatchPourSite(3, 1, "PRIVE")
         });
-        _disponibiliteRepoMock.Setup(r => r.CountBySiteAsync(1)).ReturnsAsync(10);
+        _disponibiliteRepoMock.Setup(r => r.GetBySiteAndPeriodeAsync(1, It.IsAny<DateOnly>(), It.IsAny<DateOnly>())).ReturnsAsync(DisponibilitesPourSite(1, 10));
         _terrainRepoMock.Setup(r => r.GetBySiteIdAsync(1)).ReturnsAsync(new List<Terrain> {
             new() { Id = 11, SiteId = 1, Numero = 1 }, new() { Id = 12, SiteId = 1, Numero = 2 }
         });
-        _statistiqueRepoMock.Setup(r => r.GetParticipationsAsync(1)).ReturnsAsync(new List<Participation>());
+        _statistiqueRepoMock.Setup(r => r.GetPaiementsAsync(1)).ReturnsAsync(new List<Paiement>());
 
         var resultat = await _service.ObtenirStatistiquesAsync(1);
 
@@ -125,12 +147,31 @@ public class StatistiqueServiceTests {
     }
 
     [Fact]
+    public async Task ObtenirStatistiquesAsync_ExclutLesMatchsHorsFenetreDuTauxMaisPasDesComptesPublicsPrives() {
+        // Un match vieux de 100 jours (hors fenêtre de 60j) compte pour publics/privés, mais pas
+        // pour le taux d'occupation (seul le match récent doit y contribuer).
+        _siteRepoMock.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(new Site { Id = 1, Nom = "Site 1" });
+        _matchRepoMock.Setup(r => r.GetTousLesMatchsAsync(1)).ReturnsAsync(new List<Match> {
+            MatchPourSite(1, 1, "PUBLIC", DateTime.Today.AddDays(-100)), // hors fenêtre
+            MatchPourSite(2, 1, "PUBLIC") // récent
+        });
+        _disponibiliteRepoMock.Setup(r => r.GetBySiteAndPeriodeAsync(1, It.IsAny<DateOnly>(), It.IsAny<DateOnly>())).ReturnsAsync(DisponibilitesPourSite(1, 10));
+        _terrainRepoMock.Setup(r => r.GetBySiteIdAsync(1)).ReturnsAsync(new List<Terrain> { new() { Id = 11, SiteId = 1, Numero = 1 } });
+        _statistiqueRepoMock.Setup(r => r.GetPaiementsAsync(1)).ReturnsAsync(new List<Paiement>());
+
+        var resultat = await _service.ObtenirStatistiquesAsync(1);
+
+        Assert.Equal(2, resultat[0].NombreMatchsPublics); // les deux comptent
+        Assert.Equal(0.10m, resultat[0].TauxOccupation); // seul le récent (1 / 10)
+    }
+
+    [Fact]
     public async Task ObtenirStatistiquesAsync_AucunCreneauOuTerrain_TauxAZeroSansException() {
         _siteRepoMock.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(new Site { Id = 1, Nom = "Site 1" });
         _matchRepoMock.Setup(r => r.GetTousLesMatchsAsync(1)).ReturnsAsync(new List<Match>());
-        _disponibiliteRepoMock.Setup(r => r.CountBySiteAsync(1)).ReturnsAsync(0);
+        _disponibiliteRepoMock.Setup(r => r.GetBySiteAndPeriodeAsync(1, It.IsAny<DateOnly>(), It.IsAny<DateOnly>())).ReturnsAsync(new List<Disponibilite>());
         _terrainRepoMock.Setup(r => r.GetBySiteIdAsync(1)).ReturnsAsync(new List<Terrain>());
-        _statistiqueRepoMock.Setup(r => r.GetParticipationsAsync(1)).ReturnsAsync(new List<Participation>());
+        _statistiqueRepoMock.Setup(r => r.GetPaiementsAsync(1)).ReturnsAsync(new List<Paiement>());
 
         var resultat = await _service.ObtenirStatistiquesAsync(1);
 
@@ -138,15 +179,18 @@ public class StatistiqueServiceTests {
     }
 
     [Fact]
-    public async Task ObtenirStatistiquesAsync_CompteLesMembresActifsDistinctsPeuImportePaye() {
+    public async Task ObtenirStatistiquesAsync_CompteLesMembresActifsDistinctsUniquementSiPaye() {
+        // Seuls les paiements (jointure PARTICIPATION -> PAIEMENT) comptent — une participation
+        // impayée n'apparaît jamais dans GetPaiementsAsync, donc ne peut pas gonfler ce compte.
         _siteRepoMock.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(new Site { Id = 1, Nom = "Site 1" });
         _matchRepoMock.Setup(r => r.GetTousLesMatchsAsync(1)).ReturnsAsync(new List<Match>());
-        _disponibiliteRepoMock.Setup(r => r.CountBySiteAsync(1)).ReturnsAsync(10);
+        _disponibiliteRepoMock.Setup(r => r.GetBySiteAndPeriodeAsync(1, It.IsAny<DateOnly>(), It.IsAny<DateOnly>())).ReturnsAsync(DisponibilitesPourSite(1, 10));
         _terrainRepoMock.Setup(r => r.GetBySiteIdAsync(1)).ReturnsAsync(new List<Terrain> { new() { Id = 11, SiteId = 1, Numero = 1 } });
-        _statistiqueRepoMock.Setup(r => r.GetParticipationsAsync(1)).ReturnsAsync(new List<Participation> {
-            ParticipationPourSite(1, 1, "G001"),
-            ParticipationPourSite(1, 1, "G001"), // même membre, même match compté une fois -> distinct
-            ParticipationPourSite(2, 1, "L001")
+        _statistiqueRepoMock.Setup(r => r.GetPaiementsAsync(1)).ReturnsAsync(new List<Paiement> {
+            PaiementPourSiteEtMembre(1, 1, "G001"),
+            PaiementPourSiteEtMembre(1, 1, "G001"), // même membre, même match compté une fois -> distinct
+            PaiementPourSiteEtMembre(2, 1, "L001")
+            // G002 aurait une participation impayée : absente de GetPaiementsAsync, donc pas comptée.
         });
 
         var resultat = await _service.ObtenirStatistiquesAsync(1);
@@ -161,9 +205,9 @@ public class StatistiqueServiceTests {
             new() { Id = 2, Nom = "Site 2" }
         });
         _matchRepoMock.Setup(r => r.GetTousLesMatchsAsync(null)).ReturnsAsync(new List<Match>());
-        _disponibiliteRepoMock.Setup(r => r.CountBySiteAsync(It.IsAny<int>())).ReturnsAsync(10);
+        _disponibiliteRepoMock.Setup(r => r.GetBySiteAndPeriodeAsync(It.IsAny<int>(), It.IsAny<DateOnly>(), It.IsAny<DateOnly>())).ReturnsAsync(DisponibilitesPourSite(1, 10));
         _terrainRepoMock.Setup(r => r.GetBySiteIdAsync(It.IsAny<int>())).ReturnsAsync(new List<Terrain> { new() { Id = 11, SiteId = 1, Numero = 1 } });
-        _statistiqueRepoMock.Setup(r => r.GetParticipationsAsync(null)).ReturnsAsync(new List<Participation>());
+        _statistiqueRepoMock.Setup(r => r.GetPaiementsAsync(null)).ReturnsAsync(new List<Paiement>());
 
         var resultat = await _service.ObtenirStatistiquesAsync(null);
 

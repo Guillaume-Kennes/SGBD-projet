@@ -74,24 +74,4 @@ public class DisponibiliteRepositoryTests {
         Assert.Contains(toutes, d => d.Date.Year == 2025);
         Assert.Contains(toutes, d => d.Date == new DateOnly(2026, 3, 1));
     }
-
-    [Fact]
-    public async Task CountBySiteAsync_CompteToutesLesDatesSansFiltreDePeriode() {
-        // Arrange
-        await using var context = CreerContexteEnMemoire();
-        context.Sites.AddRange(new Site { Id = 1, Nom = "Site 1" }, new Site { Id = 2, Nom = "Site 2" });
-        context.Disponibilites.AddRange(
-            new Disponibilite { SiteId = 1, Date = new DateOnly(2025, 1, 5), HeureDebut = new TimeOnly(9, 0), HeureFin = new TimeOnly(10, 30) },
-            new Disponibilite { SiteId = 1, Date = new DateOnly(2026, 6, 1), HeureDebut = new TimeOnly(9, 0), HeureFin = new TimeOnly(10, 30) }, // année différente, comptée quand même
-            new Disponibilite { SiteId = 2, Date = new DateOnly(2025, 1, 5), HeureDebut = new TimeOnly(9, 0), HeureFin = new TimeOnly(10, 30) }); // autre site
-        await context.SaveChangesAsync();
-
-        var repository = new DisponibiliteRepository(context);
-
-        // Act
-        var resultat = await repository.CountBySiteAsync(1);
-
-        // Assert
-        Assert.Equal(2, resultat);
-    }
 }
