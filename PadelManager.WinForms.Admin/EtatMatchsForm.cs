@@ -68,6 +68,7 @@ namespace PadelManager.WinForms.Admin
                 if (matchs == null) {
                     lblMessage.Text = "Impossible de contacter le serveur. Vérifiez que l'API est lancée.";
                     grdMatchs.DataSource = null;
+                    lblTerrains.Text = "";
                     return;
                 }
 
@@ -75,11 +76,41 @@ namespace PadelManager.WinForms.Admin
                 lblMessage.Text = matchs.Count == 0
                     ? "Aucun match pour ce périmètre."
                     : $"{matchs.Count} match(s).";
+
+                var recapTerrains = await _apiClient.ObtenirRecapitulatifTerrainsAsync(siteId);
+                lblTerrains.Text = recapTerrains == null ? "" : FormatterRecapTerrains(recapTerrains, siteId == null);
             } catch (HttpRequestException) {
                 lblMessage.Text = "Impossible de contacter le serveur. Vérifiez que l'API est lancée.";
             } finally {
                 btnRafraichir.Enabled = true;
             }
+        }
+
+        // EF-bk-014 ("matchs et terrains") : un seul site -> liste complète ("Terrains : 5 (11, 12,
+        // 13, 14, 15)") ; tous les sites -> une plage compressée par site, séparées par " · "
+        // ("Site 1 : 5 (11-15) · Site 2 : 6 (21-26)").
+        private static string FormatterRecapTerrains(List<TerrainRecapResultat> recap, bool tousLesSites) {
+            if (recap.Count == 0)
+                return "Terrains : aucun.";
+
+            if (!tousLesSites) {
+                var r = recap[0];
+                return $"Terrains : {r.TerrainIds.Count} ({string.Join(", ", r.TerrainIds)})";
+            }
+
+            return string.Join(" · ", recap.Select(r => $"{r.NomSite} : {r.TerrainIds.Count} ({FormatterPlage(r.TerrainIds)})"));
+        }
+
+        private static string FormatterPlage(List<int> numeros) {
+            if (numeros.Count == 0)
+                return "aucun";
+
+            // Compressé en plage min-max si les numéros sont réellement contigus (toujours le cas
+            // dans ce projet, le nombre de terrains par site étant fixe) ; liste complète sinon,
+            // en repli défensif.
+            var min = numeros.Min();
+            var max = numeros.Max();
+            return max - min + 1 == numeros.Count ? $"{min}-{max}" : string.Join(", ", numeros);
         }
     }
 }

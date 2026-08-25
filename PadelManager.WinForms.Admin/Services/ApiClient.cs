@@ -69,6 +69,12 @@ public class ChiffreAffairesResultat {
     public decimal Montant { get; set; }
 }
 
+public class TerrainRecapResultat {
+    public int SiteId { get; set; }
+    public string NomSite { get; set; } = null!;
+    public List<int> TerrainIds { get; set; } = new();
+}
+
 // Résultat enrichi (succès + message d'erreur éventuel) pour les appels dont l'échec doit être
 // expliqué à l'utilisateur, contrairement à ConnexionAsync qui renvoie simplement null.
 public class ApiResult<T> {
@@ -185,6 +191,16 @@ public class ApiClient {
             return null;
 
         return await response.Content.ReadFromJsonAsync<List<AdminMatchResultat>>();
+    }
+
+    public async Task<List<TerrainRecapResultat>?> ObtenirRecapitulatifTerrainsAsync(int? siteId) {
+        var url = siteId.HasValue ? $"api/matchs/terrains?siteId={siteId}" : "api/matchs/terrains";
+        var response = await _httpClient.GetAsync(url);
+
+        if (!response.IsSuccessStatusCode)
+            return null;
+
+        return await response.Content.ReadFromJsonAsync<List<TerrainRecapResultat>>();
     }
 
     public async Task<List<ChiffreAffairesResultat>?> ObtenirChiffreAffairesAsync(int? siteId) {

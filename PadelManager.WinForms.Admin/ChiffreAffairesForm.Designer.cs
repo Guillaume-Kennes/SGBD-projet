@@ -59,8 +59,11 @@ namespace PadelManager.WinForms.Admin
             //
             // chkTousLesSites
             //
+            // Sur sa propre ligne plutôt qu'à droite de cboSite : à cette largeur de fenêtre
+            // (440px), "Tous les sites (global)" placé à x=360 sortait du ClientSize et restait
+            // invisible sans agrandir la fenêtre à la main.
             chkTousLesSites.AutoSize = true;
-            chkTousLesSites.Location = new Point(360, 23);
+            chkTousLesSites.Location = new Point(20, 55);
             chkTousLesSites.Name = "chkTousLesSites";
             chkTousLesSites.Size = new Size(160, 24);
             chkTousLesSites.TabIndex = 2;
@@ -70,7 +73,7 @@ namespace PadelManager.WinForms.Admin
             //
             // btnRafraichir
             //
-            btnRafraichir.Location = new Point(20, 60);
+            btnRafraichir.Location = new Point(20, 90);
             btnRafraichir.Name = "btnRafraichir";
             btnRafraichir.Size = new Size(150, 29);
             btnRafraichir.TabIndex = 3;
@@ -85,7 +88,7 @@ namespace PadelManager.WinForms.Admin
             grdChiffreAffaires.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
             grdChiffreAffaires.AutoGenerateColumns = false;
             grdChiffreAffaires.Columns.AddRange(new DataGridViewColumn[] { colNomSite, colMontant });
-            grdChiffreAffaires.Location = new Point(20, 100);
+            grdChiffreAffaires.Location = new Point(20, 130);
             grdChiffreAffaires.Name = "grdChiffreAffaires";
             grdChiffreAffaires.ReadOnly = true;
             grdChiffreAffaires.RowHeadersWidth = 25;
@@ -112,7 +115,7 @@ namespace PadelManager.WinForms.Admin
             //
             lblTotal.AutoSize = true;
             lblTotal.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
-            lblTotal.Location = new Point(20, 350);
+            lblTotal.Location = new Point(20, 380);
             lblTotal.Name = "lblTotal";
             lblTotal.Size = new Size(0, 23);
             lblTotal.TabIndex = 5;
@@ -120,7 +123,7 @@ namespace PadelManager.WinForms.Admin
             // lblMessage
             //
             lblMessage.AutoSize = true;
-            lblMessage.Location = new Point(20, 385);
+            lblMessage.Location = new Point(20, 415);
             lblMessage.MaximumSize = new Size(400, 0);
             lblMessage.Name = "lblMessage";
             lblMessage.Size = new Size(0, 20);
@@ -130,7 +133,7 @@ namespace PadelManager.WinForms.Admin
             //
             AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(440, 420);
+            ClientSize = new Size(440, 450);
             Controls.Add(lblMessage);
             Controls.Add(lblTotal);
             Controls.Add(grdChiffreAffaires);

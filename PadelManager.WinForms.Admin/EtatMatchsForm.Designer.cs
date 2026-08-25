@@ -31,6 +31,7 @@ namespace PadelManager.WinForms.Admin
             cboSite = new ComboBox();
             chkTousLesSites = new CheckBox();
             btnRafraichir = new Button();
+            lblTerrains = new Label();
             grdMatchs = new DataGridView();
             colId = new DataGridViewTextBoxColumn();
             colNomSite = new DataGridViewTextBoxColumn();
@@ -82,20 +83,31 @@ namespace PadelManager.WinForms.Admin
             btnRafraichir.UseVisualStyleBackColor = true;
             btnRafraichir.Click += btnRafraichir_Click;
             //
+            // lblTerrains
+            //
+            // Propre ligne, pleine largeur (même leçon que le label de dette côté Membre) : un
+            // récap "tous les sites" peut être long, il ne doit jamais sortir de la zone visible.
+            lblTerrains.AutoSize = true;
+            lblTerrains.Location = new Point(20, 100);
+            lblTerrains.MaximumSize = new Size(900, 0);
+            lblTerrains.Name = "lblTerrains";
+            lblTerrains.Size = new Size(0, 20);
+            lblTerrains.TabIndex = 4;
+            //
             // grdMatchs
             //
             grdMatchs.AllowUserToAddRows = false;
             grdMatchs.AllowUserToDeleteRows = false;
-            grdMatchs.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            grdMatchs.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom;
             grdMatchs.AutoGenerateColumns = false;
             grdMatchs.Columns.AddRange(new DataGridViewColumn[] { colId, colNomSite, colTerrainId, colNumeroTerrain, colDateHeure, colVisibilite, colStatut });
-            grdMatchs.Location = new Point(20, 100);
+            grdMatchs.Location = new Point(20, 135);
             grdMatchs.Name = "grdMatchs";
             grdMatchs.ReadOnly = true;
             grdMatchs.RowHeadersWidth = 25;
             grdMatchs.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-            grdMatchs.Size = new Size(700, 320);
-            grdMatchs.TabIndex = 4;
+            grdMatchs.Size = new Size(900, 420);
+            grdMatchs.TabIndex = 5;
             //
             // colId
             //
@@ -149,19 +161,21 @@ namespace PadelManager.WinForms.Admin
             // lblMessage
             //
             lblMessage.AutoSize = true;
-            lblMessage.Location = new Point(20, 430);
-            lblMessage.MaximumSize = new Size(700, 0);
+            lblMessage.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
+            lblMessage.Location = new Point(20, 565);
+            lblMessage.MaximumSize = new Size(900, 0);
             lblMessage.Name = "lblMessage";
             lblMessage.Size = new Size(0, 20);
-            lblMessage.TabIndex = 5;
+            lblMessage.TabIndex = 6;
             //
             // EtatMatchsForm
             //
             AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(740, 470);
+            ClientSize = new Size(940, 600);
             Controls.Add(lblMessage);
             Controls.Add(grdMatchs);
+            Controls.Add(lblTerrains);
             Controls.Add(btnRafraichir);
             Controls.Add(chkTousLesSites);
             Controls.Add(cboSite);
@@ -180,6 +194,7 @@ namespace PadelManager.WinForms.Admin
         private ComboBox cboSite;
         private CheckBox chkTousLesSites;
         private Button btnRafraichir;
+        private Label lblTerrains;
         private DataGridView grdMatchs;
         private DataGridViewTextBoxColumn colId;
         private DataGridViewTextBoxColumn colNomSite;
