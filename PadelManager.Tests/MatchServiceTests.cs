@@ -1028,4 +1028,46 @@ public class MatchServiceTests {
 
         Assert.Null(resultat);
     }
+
+    // --- ObtenirEtatMatchsAsync (EF-bk-014) ---
+
+    [Fact]
+    public async Task ObtenirEtatMatchsAsync_TransmetLeFiltreSiteAuRepository() {
+        _matchRepoMock.Setup(r => r.GetTousLesMatchsAsync(1)).ReturnsAsync(new List<Match>());
+
+        await _service.ObtenirEtatMatchsAsync(1);
+
+        _matchRepoMock.Verify(r => r.GetTousLesMatchsAsync(1), Times.Once);
+    }
+
+    [Fact]
+    public async Task ObtenirEtatMatchsAsync_ExposeLesIdsEtTrieParDateCroissante() {
+        var site = new Site { Id = 1, Nom = "Site 1" };
+        var terrain = new Terrain { Id = 11, SiteId = 1, Numero = 3 };
+        var matchTardif = new Match { Id = 2, SiteId = 1, TerrainId = 11, DateHeure = DateTime.Today.AddDays(5), Visibilite = "PUBLIC", OrganisateurMatricule = "G001", Statut = "INCOMPLET", Site = site, Terrain = terrain };
+        var matchProche = new Match { Id = 1, SiteId = 1, TerrainId = 11, DateHeure = DateTime.Today.AddDays(1), Visibilite = "PRIVE", OrganisateurMatricule = "G001", Statut = "COMPLET", Site = site, Terrain = terrain };
+        _matchRepoMock.Setup(r => r.GetTousLesMatchsAsync(null)).ReturnsAsync(new List<Match> { matchTardif, matchProche });
+
+        var resultat = await _service.ObtenirEtatMatchsAsync(null);
+
+        Assert.Equal(2, resultat.Count);
+        Assert.Equal(1, resultat[0].Id);
+        Assert.Equal(11, resultat[0].TerrainId);
+        Assert.Equal(3, resultat[0].NumeroTerrain);
+        Assert.Equal("COMPLET", resultat[0].Statut);
+        Assert.Equal(2, resultat[1].Id);
+    }
+
+    // "Statut TERMINE d'un match" (calcul hybride, CDC) : même règle que EF-bk-013/021.
+    [Fact]
+    public async Task ObtenirEtatMatchsAsync_MatchPasseNonScelle_AfficheTermineCalcule() {
+        var site = new Site { Id = 1, Nom = "Site 1" };
+        var terrain = new Terrain { Id = 11, SiteId = 1, Numero = 3 };
+        var match = new Match { Id = 1, SiteId = 1, TerrainId = 11, DateHeure = DateTime.Now.AddDays(-1), Visibilite = "PRIVE", OrganisateurMatricule = "G001", Statut = "INCOMPLET", Site = site, Terrain = terrain };
+        _matchRepoMock.Setup(r => r.GetTousLesMatchsAsync(null)).ReturnsAsync(new List<Match> { match });
+
+        var resultat = await _service.ObtenirEtatMatchsAsync(null);
+
+        Assert.Equal("TERMINE", resultat[0].Statut);
+    }
 }

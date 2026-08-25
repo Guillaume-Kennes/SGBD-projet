@@ -274,4 +274,46 @@ public class MatchRepositoryTests {
 
         Assert.Null(resultat);
     }
+
+    [Fact]
+    public async Task GetTousLesMatchsAsync_SansFiltre_RetourneTousLesSites() {
+        // Arrange
+        await using var context = await CreerContexteAvecDonneesDeBaseAsync();
+        context.Sites.Add(new Site { Id = 2, Nom = "Site 2" });
+        context.Terrains.Add(new Terrain { Id = 21, SiteId = 2, Numero = 1 });
+        context.Matches.AddRange(
+            new Match { Id = 1, SiteId = 1, TerrainId = 11, DateHeure = new DateTime(2026, 1, 5, 9, 0, 0), Visibilite = "PRIVE", OrganisateurMatricule = "G001", Statut = "INCOMPLET" },
+            new Match { Id = 2, SiteId = 2, TerrainId = 21, DateHeure = new DateTime(2026, 1, 6, 9, 0, 0), Visibilite = "PUBLIC", OrganisateurMatricule = "G001", Statut = "COMPLET" });
+        await context.SaveChangesAsync();
+
+        var repository = new MatchRepository(context);
+
+        // Act
+        var resultat = await repository.GetTousLesMatchsAsync(null);
+
+        // Assert
+        Assert.Equal(2, resultat.Count);
+    }
+
+    [Fact]
+    public async Task GetTousLesMatchsAsync_AvecFiltreSite_NeRetourneQueCeSite() {
+        // Arrange
+        await using var context = await CreerContexteAvecDonneesDeBaseAsync();
+        context.Sites.Add(new Site { Id = 2, Nom = "Site 2" });
+        context.Terrains.Add(new Terrain { Id = 21, SiteId = 2, Numero = 1 });
+        context.Matches.AddRange(
+            new Match { Id = 1, SiteId = 1, TerrainId = 11, DateHeure = new DateTime(2026, 1, 5, 9, 0, 0), Visibilite = "PRIVE", OrganisateurMatricule = "G001", Statut = "INCOMPLET" },
+            new Match { Id = 2, SiteId = 2, TerrainId = 21, DateHeure = new DateTime(2026, 1, 6, 9, 0, 0), Visibilite = "PUBLIC", OrganisateurMatricule = "G001", Statut = "COMPLET" });
+        await context.SaveChangesAsync();
+
+        var repository = new MatchRepository(context);
+
+        // Act
+        var resultat = await repository.GetTousLesMatchsAsync(1);
+
+        // Assert
+        Assert.Single(resultat);
+        Assert.Equal(1, resultat[0].Id);
+        Assert.Equal("Site 1", resultat[0].Site.Nom);
+    }
 }

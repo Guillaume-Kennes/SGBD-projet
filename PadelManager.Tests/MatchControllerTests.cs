@@ -277,4 +277,18 @@ public class MatchControllerTests {
         // Assert
         Assert.IsType<NotFoundObjectResult>(resultat);
     }
+
+    [Fact]
+    public async Task ObtenirEtat_RetourneOk() {
+        // Arrange
+        var matchs = new List<AdminMatchDto> { new() { Id = 1, SiteId = 1, NomSite = "Site 1", TerrainId = 11, NumeroTerrain = 2, DateHeure = new DateTime(2026, 1, 5, 9, 0, 0), Visibilite = "PRIVE", Statut = "INCOMPLET" } };
+        _serviceMock.Setup(s => s.ObtenirEtatMatchsAsync(1)).ReturnsAsync(matchs);
+
+        // Act
+        var resultat = await _controller.ObtenirEtat(1);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(resultat);
+        Assert.Equal(matchs, okResult.Value);
+    }
 }

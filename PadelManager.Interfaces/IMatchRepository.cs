@@ -48,4 +48,10 @@ public interface IMatchRepository {
     // Détail complet d'un match (EF-bk-021) : Site/Terrain/Participations+Paiement inclus, pour
     // afficher le statut de paiement de chaque joueur.
     Task<Match?> GetDetailAsync(int id);
+
+    // Tous les matchs, tout statut/visibilité, optionnellement filtrés par site (EF-bk-014, vue
+    // administrateur). Site/Terrain inclus pour l'affichage. Contrairement aux méthodes côté
+    // membre, aucun filtrage de portée ici : la portée admin (Global/Site) est du ressort du
+    // Service/client (cf. les autres écrans admin de ce projet, jamais vérifiés côté API).
+    Task<List<Match>> GetTousLesMatchsAsync(int? siteId);
 }

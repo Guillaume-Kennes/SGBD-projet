@@ -106,4 +106,13 @@ public class MatchController : ControllerBase {
 
         return Ok(detail);
     }
+
+    // Vue administrateur (EF-bk-014) : siteId omis -> tous les sites (admin Global), fourni ->
+    // filtré à ce site (admin de Site). Comme les autres écrans admin de ce projet, la portée
+    // Global/Site elle-même n'est pas vérifiée côté API (cf. AdminMenuForm côté WinForms).
+    [HttpGet("etat")]
+    public async Task<IActionResult> ObtenirEtat([FromQuery] int? siteId) {
+        var matchs = await _matchService.ObtenirEtatMatchsAsync(siteId);
+        return Ok(matchs);
+    }
 }
