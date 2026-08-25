@@ -55,4 +55,9 @@ public interface IMatchService {
     // portée Global/Site elle-même n'est pas vérifiée ici (comme les autres écrans admin de ce
     // projet).
     Task<List<AdminMatchDto>> ObtenirEtatMatchsAsync(int? siteId);
+
+    // Récapitulatif des terrains (EF-bk-014, "matchs et terrains") : un élément par site (siteId
+    // fourni -> ce seul site ; omis -> tous les sites), numéros triés. Portée non vérifiée, comme
+    // ObtenirEtatMatchsAsync.
+    Task<List<TerrainRecapDto>> ObtenirRecapitulatifTerrainsAsync(int? siteId);
 }

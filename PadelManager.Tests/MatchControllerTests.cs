@@ -291,4 +291,18 @@ public class MatchControllerTests {
         var okResult = Assert.IsType<OkObjectResult>(resultat);
         Assert.Equal(matchs, okResult.Value);
     }
+
+    [Fact]
+    public async Task ObtenirRecapitulatifTerrains_RetourneOk() {
+        // Arrange
+        var recap = new List<TerrainRecapDto> { new() { SiteId = 1, NomSite = "Site 1", TerrainIds = new List<int> { 11, 12, 13 } } };
+        _serviceMock.Setup(s => s.ObtenirRecapitulatifTerrainsAsync(1)).ReturnsAsync(recap);
+
+        // Act
+        var resultat = await _controller.ObtenirRecapitulatifTerrains(1);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(resultat);
+        Assert.Equal(recap, okResult.Value);
+    }
 }

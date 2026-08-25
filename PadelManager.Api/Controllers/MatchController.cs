@@ -115,4 +115,11 @@ public class MatchController : ControllerBase {
         var matchs = await _matchService.ObtenirEtatMatchsAsync(siteId);
         return Ok(matchs);
     }
+
+    // Récapitulatif des terrains (EF-bk-014, "matchs et terrains"), même convention de portée.
+    [HttpGet("terrains")]
+    public async Task<IActionResult> ObtenirRecapitulatifTerrains([FromQuery] int? siteId) {
+        var recap = await _matchService.ObtenirRecapitulatifTerrainsAsync(siteId);
+        return Ok(recap);
+    }
 }

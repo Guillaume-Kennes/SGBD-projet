@@ -1070,4 +1070,47 @@ public class MatchServiceTests {
 
         Assert.Equal("TERMINE", resultat[0].Statut);
     }
+
+    // --- ObtenirRecapitulatifTerrainsAsync (EF-bk-014) ---
+
+    [Fact]
+    public async Task ObtenirRecapitulatifTerrainsAsync_AvecSiteId_RetourneUnSeulSiteTrieAscendant() {
+        _siteRepoMock.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(new Site { Id = 1, Nom = "Site 1" });
+        _terrainRepoMock.Setup(r => r.GetBySiteIdAsync(1)).ReturnsAsync(new List<Terrain> {
+            new() { Id = 13, SiteId = 1, Numero = 13 },
+            new() { Id = 11, SiteId = 1, Numero = 11 },
+            new() { Id = 12, SiteId = 1, Numero = 12 }
+        });
+
+        var resultat = await _service.ObtenirRecapitulatifTerrainsAsync(1);
+
+        Assert.Single(resultat);
+        Assert.Equal(1, resultat[0].SiteId);
+        Assert.Equal(new List<int> { 11, 12, 13 }, resultat[0].TerrainIds);
+    }
+
+    [Fact]
+    public async Task ObtenirRecapitulatifTerrainsAsync_SiteInconnu_RetourneListeVide() {
+        _siteRepoMock.Setup(r => r.GetByIdAsync(99)).ReturnsAsync((Site?)null);
+
+        var resultat = await _service.ObtenirRecapitulatifTerrainsAsync(99);
+
+        Assert.Empty(resultat);
+    }
+
+    [Fact]
+    public async Task ObtenirRecapitulatifTerrainsAsync_SansSiteId_RetourneTousLesSites() {
+        _siteRepoMock.Setup(r => r.GetAllAsync()).ReturnsAsync(new List<Site> {
+            new() { Id = 1, Nom = "Site 1" },
+            new() { Id = 2, Nom = "Site 2" }
+        });
+        _terrainRepoMock.Setup(r => r.GetBySiteIdAsync(1)).ReturnsAsync(new List<Terrain> { new() { Id = 11, SiteId = 1, Numero = 11 } });
+        _terrainRepoMock.Setup(r => r.GetBySiteIdAsync(2)).ReturnsAsync(new List<Terrain>()); // site sans terrain (cas limite)
+
+        var resultat = await _service.ObtenirRecapitulatifTerrainsAsync(null);
+
+        Assert.Equal(2, resultat.Count);
+        Assert.Equal(new List<int> { 11 }, resultat[0].TerrainIds);
+        Assert.Empty(resultat[1].TerrainIds);
+    }
 }

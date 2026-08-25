@@ -312,6 +312,28 @@ public class MatchService : IMatchService {
             .ToList();
     }
 
+    public async Task<List<TerrainRecapDto>> ObtenirRecapitulatifTerrainsAsync(int? siteId) {
+        List<Site> sites;
+        if (siteId.HasValue) {
+            var site = await _siteRepository.GetByIdAsync(siteId.Value);
+            sites = site != null ? new List<Site> { site } : new List<Site>();
+        } else {
+            sites = await _siteRepository.GetAllAsync();
+        }
+
+        var recap = new List<TerrainRecapDto>();
+        foreach (var site in sites) {
+            var terrains = await _terrainRepository.GetBySiteIdAsync(site.Id);
+            recap.Add(new TerrainRecapDto {
+                SiteId = site.Id,
+                NomSite = site.Nom,
+                TerrainIds = terrains.Select(t => t.Id).OrderBy(id => id).ToList()
+            });
+        }
+
+        return recap.OrderBy(r => r.SiteId).ToList();
+    }
+
     // "Statut TERMINE d'un match" (calcul hybride, CDC) : tant que le job de clôture quotidien
     // (padel_job, EF-bk-008/issue #10) n'a pas encore scellé le match en base, son statut réel
     // reste INCOMPLET/COMPLET même après l'heure du match — rien ne le met à jour en temps réel.
