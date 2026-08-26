@@ -4,22 +4,33 @@ using PadelManager.Models.Dtos;
 namespace PadelManager.Services;
 
 public class StatistiqueService : IStatistiqueService {
+    // Fenêtre glissante récente pour le taux d'occupation (EF-bk-016) : sur l'ensemble du
+    // calendrier DISPONIBILITE (généré 2 ans à l'avance), le taux serait écrasé par la faible
+    // proportion de créneaux déjà pris, sans rapport avec l'usage réel récent. 60 jours, contrairement
+    // aux matchs publics/privés et aux membres actifs, qui restent sur l'ensemble des données.
+    private const int JoursFenetreOccupation = 60;
+
     private readonly ISiteRepository _siteRepository;
+    private readonly ITerrainRepository _terrainRepository;
+    private readonly IMatchRepository _matchRepository;
+    private readonly IDisponibiliteRepository _disponibiliteRepository;
     private readonly IStatistiqueRepository _statistiqueRepository;
 
-    public StatistiqueService(ISiteRepository siteRepository, IStatistiqueRepository statistiqueRepository) {
+    public StatistiqueService(
+        ISiteRepository siteRepository,
+        ITerrainRepository terrainRepository,
+        IMatchRepository matchRepository,
+        IDisponibiliteRepository disponibiliteRepository,
+        IStatistiqueRepository statistiqueRepository) {
         _siteRepository = siteRepository;
+        _terrainRepository = terrainRepository;
+        _matchRepository = matchRepository;
+        _disponibiliteRepository = disponibiliteRepository;
         _statistiqueRepository = statistiqueRepository;
     }
 
     public async Task<List<ChiffreAffairesDto>> ObtenirChiffreAffairesAsync(int? siteId) {
-        List<Site> sites;
-        if (siteId.HasValue) {
-            var site = await _siteRepository.GetByIdAsync(siteId.Value);
-            sites = site != null ? new List<Site> { site } : new List<Site>();
-        } else {
-            sites = await _siteRepository.GetAllAsync();
-        }
+        var sites = await ObtenirSitesConcernesAsync(siteId);
 
         var paiements = await _statistiqueRepository.GetPaiementsAsync(siteId);
 
@@ -37,5 +48,64 @@ public class StatistiqueService : IStatistiqueService {
             })
             .OrderBy(d => d.SiteId)
             .ToList();
+    }
+
+    public async Task<List<StatistiquesDto>> ObtenirStatistiquesAsync(int? siteId) {
+        var sites = await ObtenirSitesConcernesAsync(siteId);
+
+        var matchs = await _matchRepository.GetTousLesMatchsAsync(siteId);
+        var paiements = await _statistiqueRepository.GetPaiementsAsync(siteId);
+
+        var maintenant = DateTime.Now;
+        var dateFin = DateOnly.FromDateTime(maintenant);
+        var dateDebut = dateFin.AddDays(-JoursFenetreOccupation);
+
+        var resultat = new List<StatistiquesDto>();
+        foreach (var site in sites) {
+            var matchsDuSite = matchs.Where(m => m.SiteId == site.Id).ToList();
+            var nbPublics = matchsDuSite.Count(m => m.Visibilite == "PUBLIC");
+            var nbPrives = matchsDuSite.Count(m => m.Visibilite == "PRIVE");
+
+            // Taux d'occupation : uniquement sur la fenêtre récente (matchs comme créneaux), pas
+            // sur les comptes publics/privés ci-dessus qui restent sur l'ensemble des données.
+            // Borne haute sur l'instant exact (DateTime.Now), pas sur la date du jour seule : un
+            // match programmé plus tard aujourd'hui n'a pas encore eu lieu et ne doit pas gonfler
+            // l'occupation (contrairement à la borne basse, où le jour entier -60j convient).
+            var matchsRecents = matchsDuSite.Count(m =>
+                m.DateHeure >= dateDebut.ToDateTime(TimeOnly.MinValue) && m.DateHeure <= maintenant);
+            var creneauxRecents = (await _disponibiliteRepository.GetBySiteAndPeriodeAsync(site.Id, dateDebut, dateFin)).Count;
+            var nbTerrains = (await _terrainRepository.GetBySiteIdAsync(site.Id)).Count;
+            var capacite = creneauxRecents * nbTerrains;
+            var tauxOccupation = capacite > 0 ? (decimal)matchsRecents / capacite : 0m;
+
+            // Membres actifs : uniquement une participation PAYÉE (jointure PAIEMENT) — une
+            // participation impayée ne représente pas un membre ayant réellement joué, et ça rend
+            // la stat indépendante du passage ou non du job de bascule sur les places impayées.
+            var membresActifs = paiements
+                .Where(p => p.Participation.Match.SiteId == site.Id)
+                .Select(p => p.Participation.MembreMatricule)
+                .Distinct()
+                .Count();
+
+            resultat.Add(new StatistiquesDto {
+                SiteId = site.Id,
+                NomSite = site.Nom,
+                NombreMatchsPublics = nbPublics,
+                NombreMatchsPrives = nbPrives,
+                TauxOccupation = tauxOccupation,
+                MembresActifs = membresActifs
+            });
+        }
+
+        return resultat.OrderBy(r => r.SiteId).ToList();
+    }
+
+    private async Task<List<Site>> ObtenirSitesConcernesAsync(int? siteId) {
+        if (siteId.HasValue) {
+            var site = await _siteRepository.GetByIdAsync(siteId.Value);
+            return site != null ? new List<Site> { site } : new List<Site>();
+        }
+
+        return await _siteRepository.GetAllAsync();
     }
 }

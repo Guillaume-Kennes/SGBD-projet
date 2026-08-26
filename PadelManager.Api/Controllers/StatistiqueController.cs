@@ -19,4 +19,11 @@ public class StatistiqueController : ControllerBase {
         var chiffreAffaires = await _statistiqueService.ObtenirChiffreAffairesAsync(siteId);
         return Ok(chiffreAffaires);
     }
+
+    // EF-bk-016 : matchs publics/privés, taux d'occupation, membres actifs.
+    [HttpGet]
+    public async Task<IActionResult> ObtenirStatistiques([FromQuery] int? siteId) {
+        var statistiques = await _statistiqueService.ObtenirStatistiquesAsync(siteId);
+        return Ok(statistiques);
+    }
 }

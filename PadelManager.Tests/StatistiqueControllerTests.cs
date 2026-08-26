@@ -46,4 +46,20 @@ public class StatistiqueControllerTests {
         var okResult = Assert.IsType<OkObjectResult>(resultat);
         Assert.Equal(chiffreAffaires, okResult.Value);
     }
+
+    [Fact]
+    public async Task ObtenirStatistiques_RetourneOk() {
+        // Arrange
+        var statistiques = new List<StatistiquesDto> {
+            new() { SiteId = 1, NomSite = "Site 1", NombreMatchsPublics = 3, NombreMatchsPrives = 2, TauxOccupation = 0.15m, MembresActifs = 4 }
+        };
+        _serviceMock.Setup(s => s.ObtenirStatistiquesAsync(1)).ReturnsAsync(statistiques);
+
+        // Act
+        var resultat = await _controller.ObtenirStatistiques(1);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(resultat);
+        Assert.Equal(statistiques, okResult.Value);
+    }
 }

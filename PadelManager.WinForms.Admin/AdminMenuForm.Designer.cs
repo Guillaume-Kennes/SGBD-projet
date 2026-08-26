@@ -33,6 +33,8 @@ namespace PadelManager.WinForms.Admin
             btnFermetureHebdoGlobale = new Button();
             btnEtatMatchs = new Button();
             btnChiffreAffaires = new Button();
+            btnStatistiques = new Button();
+            btnMembres = new Button();
             SuspendLayout();
             //
             // lblConnecte
@@ -93,11 +95,33 @@ namespace PadelManager.WinForms.Admin
             btnChiffreAffaires.UseVisualStyleBackColor = true;
             btnChiffreAffaires.Click += btnChiffreAffaires_Click;
             //
+            // btnStatistiques
+            //
+            btnStatistiques.Location = new Point(20, 295);
+            btnStatistiques.Name = "btnStatistiques";
+            btnStatistiques.Size = new Size(280, 34);
+            btnStatistiques.TabIndex = 6;
+            btnStatistiques.Text = "Statistiques";
+            btnStatistiques.UseVisualStyleBackColor = true;
+            btnStatistiques.Click += btnStatistiques_Click;
+            //
+            // btnMembres
+            //
+            btnMembres.Location = new Point(20, 340);
+            btnMembres.Name = "btnMembres";
+            btnMembres.Size = new Size(280, 34);
+            btnMembres.TabIndex = 7;
+            btnMembres.Text = "Membres";
+            btnMembres.UseVisualStyleBackColor = true;
+            btnMembres.Click += btnMembres_Click;
+            //
             // AdminMenuForm
             //
             AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(340, 310);
+            ClientSize = new Size(340, 400);
+            Controls.Add(btnMembres);
+            Controls.Add(btnStatistiques);
             Controls.Add(btnChiffreAffaires);
             Controls.Add(btnEtatMatchs);
             Controls.Add(btnFermetureHebdoGlobale);
@@ -118,5 +142,7 @@ namespace PadelManager.WinForms.Admin
         private Button btnFermetureHebdoGlobale;
         private Button btnEtatMatchs;
         private Button btnChiffreAffaires;
+        private Button btnStatistiques;
+        private Button btnMembres;
     }
 }

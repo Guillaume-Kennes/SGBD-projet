@@ -39,6 +39,7 @@ builder.Services.AddScoped<IJourFermetureService, JourFermetureService>();
 builder.Services.AddScoped<IFermetureHebdoGlobaleService, FermetureHebdoGlobaleService>();
 builder.Services.AddScoped<IMatchService, MatchService>();
 builder.Services.AddScoped<IStatistiqueService, StatistiqueService>();
+builder.Services.AddScoped<IMembreService, MembreService>();
 
 // Job quotidien (EF-bk-008/009/010, ENF-009/011) : construit sa propre connexion (padel_job) à
 // chaque exécution plutôt que de dépendre du DbContext ci-dessus (padel_api) — voir

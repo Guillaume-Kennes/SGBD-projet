@@ -42,5 +42,15 @@ namespace PadelManager.WinForms.Admin
             using var form = new ChiffreAffairesForm(_connexion);
             form.ShowDialog();
         }
+
+        private void btnStatistiques_Click(object sender, EventArgs e) {
+            using var form = new StatistiquesForm(_connexion);
+            form.ShowDialog();
+        }
+
+        private void btnMembres_Click(object sender, EventArgs e) {
+            using var form = new MembresForm(_connexion);
+            form.ShowDialog();
+        }
     }
 }
