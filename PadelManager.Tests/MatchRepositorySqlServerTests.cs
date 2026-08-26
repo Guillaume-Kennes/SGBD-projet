@@ -18,8 +18,9 @@ namespace PadelManager.Tests;
 // - PADEL_TEST_SQLSERVER_CONNECTION : connexion padel_api vers PadelDB — celle utilisée par le
 //   repository testé, pour rester fidèle aux permissions réelles de l'API (padel_api n'a d'ailleurs
 //   pas le droit DELETE sur MATCH/PARTICIPATION/PAIEMENT, d'où la connexion de nettoyage séparée).
-// - PADEL_TEST_SQLSERVER_CLEANUP_CONNECTION : connexion de confiance (dbo), utilisée uniquement en
-//   nettoyage de fin de test pour supprimer les matchs créés.
+// - PADEL_TEST_SQLSERVER_CLEANUP_CONNECTION : connexion de confiance (dbo), utilisée en nettoyage
+//   de fin de test (matchs/dettes créés) et pour insérer une dette de test (CreerDetteDeTestAsync)
+//   — padel_api n'a que SELECT/UPDATE sur DETTE, jamais INSERT ni DELETE.
 //
 // Chaque test crée son propre MATCH (site 1 / terrain 11, données de référence réelles jamais
 // modifiées par ces tests) à une date éloignée dans le futur (2099+) pour ne jamais entrer en
@@ -39,6 +40,7 @@ public class MatchRepositorySqlServerTests : IAsyncLifetime {
     private PadelManagerDbContext _context = null!;
     private MatchRepository _repository = null!;
     private readonly List<int> _matchIdsACreer = new();
+    private readonly List<int> _detteIdsACreer = new();
 
     public Task InitializeAsync() {
         var connexion = Environment.GetEnvironmentVariable(VarConnexion)
@@ -58,16 +60,25 @@ public class MatchRepositorySqlServerTests : IAsyncLifetime {
     public async Task DisposeAsync() {
         await _context.DisposeAsync();
 
-        if (_matchIdsACreer.Count == 0)
+        if (_matchIdsACreer.Count == 0 && _detteIdsACreer.Count == 0)
             return;
 
         var connexionNettoyage = Environment.GetEnvironmentVariable(VarConnexionNettoyage)
             ?? throw new InvalidOperationException(
                 $"Variable d'environnement {VarConnexionNettoyage} absente : nécessaire pour nettoyer " +
-                "les matchs de test créés (padel_api n'a pas de droit DELETE).");
+                "les matchs/dettes de test créés (padel_api n'a pas de droit DELETE).");
 
         await using var connexion = new SqlConnection(connexionNettoyage);
         await connexion.OpenAsync();
+
+        // Les dettes de test référencent un MATCH (matchOrigineId, FK non nullable) : à supprimer
+        // avant les matchs eux-mêmes.
+        foreach (var detteId in _detteIdsACreer) {
+            await using var commande = connexion.CreateCommand();
+            commande.CommandText = "DELETE FROM DETTE WHERE id = @detteId;";
+            commande.Parameters.AddWithValue("@detteId", detteId);
+            await commande.ExecuteNonQueryAsync();
+        }
 
         foreach (var matchId in _matchIdsACreer) {
             await using var commande = connexion.CreateCommand();
@@ -81,6 +92,34 @@ public class MatchRepositorySqlServerTests : IAsyncLifetime {
             commande.Parameters.AddWithValue("@matchId", matchId);
             await commande.ExecuteNonQueryAsync();
         }
+    }
+
+    // padel_api n'a pas le droit INSERT sur DETTE (seulement SELECT/UPDATE) : contrairement aux
+    // matchs/participations/paiements créés via _repository, une dette de test doit être insérée
+    // via la connexion de confiance, puis relue via _context (SELECT, autorisé) pour obtenir un
+    // objet Dette exploitable par InscrireEtPayerAsync/PayerParticipationAsync.
+    private async Task<int> CreerDetteDeTestAsync(string membreMatricule, int matchOrigineId, decimal montant) {
+        var connexionNettoyage = Environment.GetEnvironmentVariable(VarConnexionNettoyage)
+            ?? throw new InvalidOperationException(
+                $"Variable d'environnement {VarConnexionNettoyage} absente : nécessaire pour créer une " +
+                "dette de test (padel_api n'a pas de droit INSERT sur DETTE).");
+
+        await using var connexion = new SqlConnection(connexionNettoyage);
+        await connexion.OpenAsync();
+
+        await using var commande = connexion.CreateCommand();
+        commande.CommandText = """
+            INSERT INTO DETTE (membreMatricule, matchOrigineId, montant, soldee, dateCreation)
+            OUTPUT INSERTED.id
+            VALUES (@membreMatricule, @matchOrigineId, @montant, 0, SYSDATETIME());
+            """;
+        commande.Parameters.AddWithValue("@membreMatricule", membreMatricule);
+        commande.Parameters.AddWithValue("@matchOrigineId", matchOrigineId);
+        commande.Parameters.AddWithValue("@montant", montant);
+
+        var detteId = (int)(await commande.ExecuteScalarAsync())!;
+        _detteIdsACreer.Add(detteId);
+        return detteId;
     }
 
     // Un créneau distinct par test (même terrain), loin dans le futur pour ne jamais collisionner
@@ -205,6 +244,44 @@ public class MatchRepositorySqlServerTests : IAsyncLifetime {
         // UQ_PAIEMENT_participationId (pas imposée par InMemory).
         await Assert.ThrowsAsync<ParticipationDejaPayeeException>(
             () => autreRepository.PayerParticipationAsync(participationVueAilleurs, null));
+    }
+
+    [Fact]
+    public async Task InscrireEtPayerAsync_AvecDetteAReporter_ReglelaDetteExistante() {
+        // Arrange : un match d'origine (juste pour matchOrigineId, FK non nullable de DETTE), une
+        // dette existante non soldée pour S002 (EF-bk-018), et le match cible sur lequel elle doit
+        // se régler.
+        var matchOrigine = NouveauMatch(DateHeureLibre(240));
+        _context.Matches.Add(matchOrigine);
+        await _context.SaveChangesAsync();
+        _matchIdsACreer.Add(matchOrigine.Id);
+
+        var detteId = await CreerDetteDeTestAsync("S002", matchOrigine.Id, montant: 15.00m);
+
+        var matchCible = NouveauMatch(DateHeureLibre(270));
+        _context.Matches.Add(matchCible);
+        await _context.SaveChangesAsync();
+        _matchIdsACreer.Add(matchCible.Id);
+
+        // Suivie (trackée) par _context, contrairement à detteApres plus bas : InscrireEtPayerAsync
+        // mute cet objet en mémoire (RegulerDetteEtStatut) puis appelle SaveChangesAsync sur ce
+        // même contexte — EF Core ne persiste que les entités qu'il suit.
+        var dette = await _context.Dettes.SingleAsync(d => d.Id == detteId);
+
+        // Act
+        var resultat = await _repository.InscrireEtPayerAsync(matchCible.Id, "S002", dette);
+
+        // Assert : le paiement reporte bien le montant de la dette (EF-bk-018, R-CALC-005).
+        Assert.NotNull(resultat.Paiement);
+        Assert.Equal(15.00m, resultat.Paiement!.MontantDetteReportee);
+
+        // Assert : la dette elle-même est marquée réglée, liée au match cible — pas au match
+        // d'origine (RegulerDetteEtStatut, jamais atteignable via InMemory ni MatchServiceTests
+        // puisque cette méthode est privée et interne au repository).
+        var detteApres = await _context.Dettes.AsNoTracking().SingleAsync(d => d.Id == detteId);
+        Assert.True(detteApres.Soldee);
+        Assert.Equal(matchCible.Id, detteApres.MatchReglementId);
+        Assert.NotNull(detteApres.DateReglement);
     }
 
     [Fact]
