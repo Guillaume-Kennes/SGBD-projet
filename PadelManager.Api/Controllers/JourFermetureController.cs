@@ -18,12 +18,12 @@ public class JourFermetureController : ControllerBase {
     // Route absolue (plutôt que imbriquée sous ce contrôleur) car la consultation, contrairement
     // à la déclaration, est toujours relative à un site donné (JOUR_FERMETURE.siteId NULL y
     // apparaît fusionné, cf. IJourFermetureRepository.GetForSiteAndAnneeAsync).
+    // Lecture seule, non soumise au contrôle de portée admin (issue #13/#14) : cette route est
+    // aussi consommée par l'application Membre (CreerMatchForm/CreerMatchPublicForm), pour savoir
+    // à l'avance si un jour est ponctuellement fermé avant de rechercher un créneau — n'importe
+    // quel membre doit pouvoir la lire, ce n'est pas une donnée réservée aux administrateurs.
     [HttpGet("/api/sites/{siteId:int}/fermetures-ponctuelles")]
-    public async Task<IActionResult> ObtenirPourSite(int siteId, [FromQuery] short annee, [FromQuery] string adminMatricule) {
-        var portee = await _adminPorteeService.VerifierPorteeSiteAsync(adminMatricule, siteId);
-        if (!portee.Autorise)
-            return StatusCode(403, new { message = portee.MessageErreur });
-
+    public async Task<IActionResult> ObtenirPourSite(int siteId, [FromQuery] short annee) {
         var fermetures = await _jourFermetureService.ObtenirPourSiteEtAnneeAsync(siteId, annee);
         return Ok(fermetures);
     }
