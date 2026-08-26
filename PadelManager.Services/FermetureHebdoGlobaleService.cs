@@ -5,9 +5,6 @@ using PadelManager.Models.Dtos;
 namespace PadelManager.Services;
 
 public class FermetureHebdoGlobaleService : IFermetureHebdoGlobaleService {
-    private const short AnneeMin = 2000;
-    private const short AnneeMax = 2100;
-
     private readonly IHoraireSiteRepository _horaireSiteRepository;
     private readonly IFermetureHebdoGlobaleRepository _fermetureHebdoGlobaleRepository;
     private readonly IDisponibiliteGenerationService _disponibiliteGenerationService;
@@ -32,9 +29,7 @@ public class FermetureHebdoGlobaleService : IFermetureHebdoGlobaleService {
             return new DefinirFermetureHebdoGlobaleResultatDto { Succes = false, MessageErreur = erreur };
         }
 
-        var joursOrdonnes = JourSemaineMapper.CodesValides
-            .Where(c => requete.JoursFermes.Contains(c))
-            .ToList();
+        var joursOrdonnes = JourSemaineMapper.Ordonner(requete.JoursFermes);
 
         await _fermetureHebdoGlobaleRepository.UpsertAsync(new FermetureHebdoGlobale {
             Annee = annee,
@@ -97,19 +92,14 @@ public class FermetureHebdoGlobaleService : IFermetureHebdoGlobaleService {
     }
 
     private static string? Valider(short annee, FermetureHebdoGlobaleRequestDto requete) {
-        if (annee < AnneeMin || annee > AnneeMax)
-            return $"Année hors bornes ({AnneeMin}-{AnneeMax}).";
+        var erreurAnnee = AnneeValidation.Valider(annee);
+        if (erreurAnnee != null)
+            return erreurAnnee;
 
         if (requete.JoursFermes == null || requete.JoursFermes.Count == 0)
             return "Veuillez sélectionner au moins un jour fermé (ou utiliser la suppression pour n'en fermer aucun).";
 
-        if (requete.JoursFermes.Distinct().Count() != requete.JoursFermes.Count)
-            return "Un jour fermé est dupliqué.";
-
-        if (requete.JoursFermes.Any(c => !JourSemaineMapper.EstCodeValide(c)))
-            return "Un des jours fermés n'est pas valide.";
-
-        return null;
+        return JourSemaineMapper.ValiderListe(requete.JoursFermes, "jour fermé", "jours fermés");
     }
 
     private static FermetureHebdoGlobaleDto VersDto(FermetureHebdoGlobale fermeture) => new() {

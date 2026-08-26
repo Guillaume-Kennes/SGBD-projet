@@ -5,9 +5,6 @@ using PadelManager.Models.Dtos;
 namespace PadelManager.Services;
 
 public class HoraireSiteService : IHoraireSiteService {
-    private const short AnneeMin = 2000;
-    private const short AnneeMax = 2100;
-
     private readonly ISiteRepository _siteRepository;
     private readonly IHoraireSiteRepository _horaireSiteRepository;
     private readonly IFermetureHebdoGlobaleRepository _fermetureHebdoGlobaleRepository;
@@ -35,9 +32,7 @@ public class HoraireSiteService : IHoraireSiteService {
             return new DefinirHoraireResultatDto { Succes = false, MessageErreur = erreur };
         }
 
-        var joursOrdonnes = JourSemaineMapper.CodesValides
-            .Where(c => requete.JoursOuverture.Contains(c))
-            .ToList();
+        var joursOrdonnes = JourSemaineMapper.Ordonner(requete.JoursOuverture);
 
         var horaire = new HoraireSite {
             SiteId = siteId,
@@ -66,17 +61,16 @@ public class HoraireSiteService : IHoraireSiteService {
         if (await _siteRepository.GetByIdAsync(siteId) == null)
             return "Site introuvable.";
 
-        if (annee < AnneeMin || annee > AnneeMax)
-            return $"Année hors bornes ({AnneeMin}-{AnneeMax}).";
+        var erreurAnnee = AnneeValidation.Valider(annee);
+        if (erreurAnnee != null)
+            return erreurAnnee;
 
         if (requete.JoursOuverture == null || requete.JoursOuverture.Count == 0)
             return "Veuillez sélectionner au moins un jour d'ouverture.";
 
-        if (requete.JoursOuverture.Distinct().Count() != requete.JoursOuverture.Count)
-            return "Un jour d'ouverture est dupliqué.";
-
-        if (requete.JoursOuverture.Any(c => !JourSemaineMapper.EstCodeValide(c)))
-            return "Un des jours d'ouverture n'est pas valide.";
+        var erreurJours = JourSemaineMapper.ValiderListe(requete.JoursOuverture, "jour d'ouverture", "jours d'ouverture");
+        if (erreurJours != null)
+            return erreurJours;
 
         if (requete.HeureDebutReservation >= requete.HeureFinReservation)
             return "L'heure de début doit précéder l'heure de fin.";

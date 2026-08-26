@@ -30,7 +30,7 @@ public class StatistiqueService : IStatistiqueService {
     }
 
     public async Task<List<ChiffreAffairesDto>> ObtenirChiffreAffairesAsync(int? siteId) {
-        var sites = await ObtenirSitesConcernesAsync(siteId);
+        var sites = await _siteRepository.ObtenirSitesConcernesAsync(siteId);
 
         var paiements = await _statistiqueRepository.GetPaiementsAsync(siteId);
 
@@ -51,7 +51,7 @@ public class StatistiqueService : IStatistiqueService {
     }
 
     public async Task<List<StatistiquesDto>> ObtenirStatistiquesAsync(int? siteId) {
-        var sites = await ObtenirSitesConcernesAsync(siteId);
+        var sites = await _siteRepository.ObtenirSitesConcernesAsync(siteId);
 
         var matchs = await _matchRepository.GetTousLesMatchsAsync(siteId);
         var paiements = await _statistiqueRepository.GetPaiementsAsync(siteId);
@@ -98,14 +98,5 @@ public class StatistiqueService : IStatistiqueService {
         }
 
         return resultat.OrderBy(r => r.SiteId).ToList();
-    }
-
-    private async Task<List<Site>> ObtenirSitesConcernesAsync(int? siteId) {
-        if (siteId.HasValue) {
-            var site = await _siteRepository.GetByIdAsync(siteId.Value);
-            return site != null ? new List<Site> { site } : new List<Site>();
-        }
-
-        return await _siteRepository.GetAllAsync();
     }
 }

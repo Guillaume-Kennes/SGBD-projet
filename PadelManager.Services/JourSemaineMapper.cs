@@ -25,4 +25,24 @@ public static class JourSemaineMapper {
     // peut désormais retirer tous les jours d'ouverture d'un site).
     public static List<string> ParseCsv(string? codes) =>
         string.IsNullOrEmpty(codes) ? new List<string>() : codes.Split(',').ToList();
+
+    // Ordonne une liste de codes jour dans l'ordre canonique (LUN..DIM), indépendamment de
+    // l'ordre de saisie — partagé par HoraireSiteService et FermetureHebdoGlobaleService.
+    public static List<string> Ordonner(List<string> codes) =>
+        CodesValides.Where(codes.Contains).ToList();
+
+    // Valide une liste de codes jour (pas de doublon, tous valides) ; nomSingulier/nomPluriel
+    // adaptent le message au contexte ("jour d'ouverture"/"jour fermé") sans dupliquer la
+    // logique de validation elle-même — partagé par HoraireSiteService et
+    // FermetureHebdoGlobaleService (chacun garde son propre message pour le cas liste vide, qui
+    // diffère entre les deux).
+    public static string? ValiderListe(List<string> codes, string nomSingulier, string nomPluriel) {
+        if (codes.Distinct().Count() != codes.Count)
+            return $"Un {nomSingulier} est dupliqué.";
+
+        if (codes.Any(c => !EstCodeValide(c)))
+            return $"Un des {nomPluriel} n'est pas valide.";
+
+        return null;
+    }
 }
