@@ -96,7 +96,13 @@ jobs:
           # Category=RequiresSqlServer exclu : ces tests (MatchRepositorySqlServerTests) tournent
           # contre une vraie instance SQL Server via des variables d'environnement non disponibles
           # ici (PADEL_TEST_SQLSERVER_CONNECTION / PADEL_TEST_SQLSERVER_CLEANUP_CONNECTION) —
-          # local uniquement.
+          # local uniquement, faute d'accès à une instance SQL Server sur les runners GitHub-hosted.
+          #
+          # Conséquence sur l'artifact de couverture généré ci-dessous : ces 7 tests étant exclus
+          # ici, MatchRepository (InscrireEtPayerAsync/PayerParticipationAsync/VerrouillerMatchAsync/
+          # AddAsync) y apparaîtra couvert à ~25% seulement. La couverture réelle de cette classe,
+          # ces tests inclus (exécutés en local, où SQL Server est disponible), est de 100% —
+          # vérifié manuellement, cf. commentaire en tête de MatchRepositorySqlServerTests.cs.
           dotnet test ./PadelManager.Tests/PadelManager.Tests.csproj \
             --configuration Release \
             --no-build \
