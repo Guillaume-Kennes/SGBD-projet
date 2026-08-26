@@ -20,6 +20,11 @@ public class JourFermetureControllerTests {
         _controller = new JourFermetureController(_serviceMock.Object, _adminPorteeServiceMock.Object);
     }
 
+    // ObtenirPourSite (GET) n'est volontairement pas soumis au contrôle de portée admin : cette
+    // route est aussi consommée par l'application Membre (CreerMatchForm/CreerMatchPublicForm)
+    // pour savoir à l'avance si un jour est ponctuellement fermé — n'importe quel membre doit
+    // pouvoir la lire.
+
     [Fact]
     public async Task ObtenirPourSite_RetourneOkAvecLaListe() {
         // Arrange
@@ -27,25 +32,11 @@ public class JourFermetureControllerTests {
         _serviceMock.Setup(s => s.ObtenirPourSiteEtAnneeAsync(1, 2026)).ReturnsAsync(liste);
 
         // Act
-        var resultat = await _controller.ObtenirPourSite(1, 2026, "G001");
+        var resultat = await _controller.ObtenirPourSite(1, 2026);
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(resultat);
         Assert.Equal(liste, okResult.Value);
-    }
-
-    [Fact]
-    public async Task ObtenirPourSite_PorteeRefusee_RetourneForbidden() {
-        // Arrange
-        _adminPorteeServiceMock.Setup(s => s.VerifierPorteeSiteAsync("S002", 1))
-            .ReturnsAsync(new PorteeAdminResultatDto { Autorise = false, MessageErreur = "Cet administrateur n'est pas autorisé pour ce site." });
-
-        // Act
-        var resultat = await _controller.ObtenirPourSite(1, 2026, "S002");
-
-        // Assert
-        var objectResult = Assert.IsType<ObjectResult>(resultat);
-        Assert.Equal(403, objectResult.StatusCode);
     }
 
     [Fact]

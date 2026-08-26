@@ -20,6 +20,10 @@ public class HoraireSiteControllerTests {
         _controller = new HoraireSiteController(_horaireServiceMock.Object, _adminPorteeServiceMock.Object);
     }
 
+    // Obtenir (GET) n'est volontairement pas soumis au contrôle de portée admin : cette route est
+    // aussi consommée par l'application Membre (CreerMatchForm/CreerMatchPublicForm) pour savoir
+    // à l'avance quels jours un site est ouvert — n'importe quel membre doit pouvoir la lire.
+
     [Fact]
     public async Task Obtenir_HoraireExistant_RetourneOk() {
         // Arrange
@@ -27,7 +31,7 @@ public class HoraireSiteControllerTests {
         _horaireServiceMock.Setup(s => s.ObtenirHoraireAsync(1, 2026)).ReturnsAsync(dto);
 
         // Act
-        var resultat = await _controller.Obtenir(1, 2026, "G001");
+        var resultat = await _controller.Obtenir(1, 2026);
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(resultat);
@@ -40,25 +44,10 @@ public class HoraireSiteControllerTests {
         _horaireServiceMock.Setup(s => s.ObtenirHoraireAsync(1, 2026)).ReturnsAsync((HoraireSiteDto?)null);
 
         // Act
-        var resultat = await _controller.Obtenir(1, 2026, "G001");
+        var resultat = await _controller.Obtenir(1, 2026);
 
         // Assert
         Assert.IsType<NotFoundObjectResult>(resultat);
-    }
-
-    [Fact]
-    public async Task Obtenir_PorteeRefusee_RetourneForbidden() {
-        // Arrange
-        _adminPorteeServiceMock.Setup(s => s.VerifierPorteeSiteAsync("S002", 1))
-            .ReturnsAsync(new PorteeAdminResultatDto { Autorise = false, MessageErreur = "Cet administrateur n'est pas autorisé pour ce site." });
-
-        // Act
-        var resultat = await _controller.Obtenir(1, 2026, "S002");
-
-        // Assert
-        var objectResult = Assert.IsType<ObjectResult>(resultat);
-        Assert.Equal(403, objectResult.StatusCode);
-        _horaireServiceMock.Verify(s => s.ObtenirHoraireAsync(It.IsAny<int>(), It.IsAny<short>()), Times.Never);
     }
 
     [Fact]

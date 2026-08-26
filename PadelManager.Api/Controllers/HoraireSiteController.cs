@@ -15,12 +15,12 @@ public class HoraireSiteController : ControllerBase {
         _adminPorteeService = adminPorteeService;
     }
 
+    // Lecture seule, non soumise au contrôle de portée admin (issue #13/#14) : cette route est
+    // aussi consommée par l'application Membre (CreerMatchForm/CreerMatchPublicForm), pour savoir
+    // à l'avance quels jours un site est ouvert avant de rechercher un créneau — n'importe quel
+    // membre doit pouvoir la lire, ce n'est pas une donnée réservée aux administrateurs.
     [HttpGet("{annee:int}")]
-    public async Task<IActionResult> Obtenir(int siteId, short annee, [FromQuery] string adminMatricule) {
-        var portee = await _adminPorteeService.VerifierPorteeSiteAsync(adminMatricule, siteId);
-        if (!portee.Autorise)
-            return StatusCode(403, new { message = portee.MessageErreur });
-
+    public async Task<IActionResult> Obtenir(int siteId, short annee) {
         var horaire = await _horaireSiteService.ObtenirHoraireAsync(siteId, annee);
         if (horaire == null)
             return NotFound(new { message = "Aucun horaire configuré pour ce site et cette année." });
