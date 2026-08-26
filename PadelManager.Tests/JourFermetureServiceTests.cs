@@ -124,6 +124,33 @@ public class JourFermetureServiceTests {
     }
 
     [Fact]
+    public async Task ObtenirParIdAsync_FermetureExistante_RetourneLeDto() {
+        // Arrange
+        _jourFermetureRepoMock.Setup(r => r.GetByIdAsync(5))
+            .ReturnsAsync(new JourFermeture { Id = 5, SiteId = 1, Date = new DateOnly(2026, 12, 24) });
+
+        // Act
+        var resultat = await _service.ObtenirParIdAsync(5);
+
+        // Assert
+        Assert.NotNull(resultat);
+        Assert.Equal(1, resultat!.SiteId);
+        Assert.Equal(new DateOnly(2026, 12, 24), resultat.Date);
+    }
+
+    [Fact]
+    public async Task ObtenirParIdAsync_Inconnue_RetourneNull() {
+        // Arrange
+        _jourFermetureRepoMock.Setup(r => r.GetByIdAsync(999)).ReturnsAsync((JourFermeture?)null);
+
+        // Act
+        var resultat = await _service.ObtenirParIdAsync(999);
+
+        // Assert
+        Assert.Null(resultat);
+    }
+
+    [Fact]
     public async Task ObtenirPourSiteEtAnneeAsync_DelegueAuRepositoryEtMappe() {
         // Arrange
         _jourFermetureRepoMock.Setup(r => r.GetForSiteAndAnneeAsync(1, 2026)).ReturnsAsync(new List<JourFermeture> {

@@ -9,11 +9,15 @@ namespace PadelManager.Tests;
 
 public class MatchControllerTests {
     private readonly Mock<IMatchService> _serviceMock;
+    private readonly Mock<IAdminPorteeService> _adminPorteeServiceMock;
     private readonly MatchController _controller;
 
     public MatchControllerTests() {
         _serviceMock = new Mock<IMatchService>();
-        _controller = new MatchController(_serviceMock.Object);
+        _adminPorteeServiceMock = new Mock<IAdminPorteeService>();
+        _adminPorteeServiceMock.Setup(s => s.VerifierPorteeSiteAsync(It.IsAny<string>(), It.IsAny<int?>()))
+            .ReturnsAsync(new PorteeAdminResultatDto { Autorise = true });
+        _controller = new MatchController(_serviceMock.Object, _adminPorteeServiceMock.Object);
     }
 
     [Fact]
@@ -285,11 +289,26 @@ public class MatchControllerTests {
         _serviceMock.Setup(s => s.ObtenirEtatMatchsAsync(1)).ReturnsAsync(matchs);
 
         // Act
-        var resultat = await _controller.ObtenirEtat(1);
+        var resultat = await _controller.ObtenirEtat(1, "G001");
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(resultat);
         Assert.Equal(matchs, okResult.Value);
+    }
+
+    [Fact]
+    public async Task ObtenirEtat_PorteeRefusee_RetourneForbidden() {
+        // Arrange
+        _adminPorteeServiceMock.Setup(s => s.VerifierPorteeSiteAsync("S002", 1))
+            .ReturnsAsync(new PorteeAdminResultatDto { Autorise = false, MessageErreur = "Cet administrateur n'est pas autorisé pour ce site." });
+
+        // Act
+        var resultat = await _controller.ObtenirEtat(1, "S002");
+
+        // Assert
+        var objectResult = Assert.IsType<ObjectResult>(resultat);
+        Assert.Equal(403, objectResult.StatusCode);
+        _serviceMock.Verify(s => s.ObtenirEtatMatchsAsync(It.IsAny<int?>()), Times.Never);
     }
 
     [Fact]
@@ -299,10 +318,25 @@ public class MatchControllerTests {
         _serviceMock.Setup(s => s.ObtenirRecapitulatifTerrainsAsync(1)).ReturnsAsync(recap);
 
         // Act
-        var resultat = await _controller.ObtenirRecapitulatifTerrains(1);
+        var resultat = await _controller.ObtenirRecapitulatifTerrains(1, "G001");
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(resultat);
         Assert.Equal(recap, okResult.Value);
+    }
+
+    [Fact]
+    public async Task ObtenirRecapitulatifTerrains_PorteeRefusee_RetourneForbidden() {
+        // Arrange
+        _adminPorteeServiceMock.Setup(s => s.VerifierPorteeSiteAsync("S002", 1))
+            .ReturnsAsync(new PorteeAdminResultatDto { Autorise = false, MessageErreur = "Cet administrateur n'est pas autorisé pour ce site." });
+
+        // Act
+        var resultat = await _controller.ObtenirRecapitulatifTerrains(1, "S002");
+
+        // Assert
+        var objectResult = Assert.IsType<ObjectResult>(resultat);
+        Assert.Equal(403, objectResult.StatusCode);
+        _serviceMock.Verify(s => s.ObtenirRecapitulatifTerrainsAsync(It.IsAny<int?>()), Times.Never);
     }
 }
