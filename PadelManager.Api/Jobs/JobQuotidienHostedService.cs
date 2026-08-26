@@ -34,15 +34,20 @@ public class JobQuotidienHostedService : BackgroundService {
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
+        var intervalleMinutesDemo = _configuration.GetValue<int?>("JobQuotidien:IntervalleMinutesDemo");
+        if (intervalleMinutesDemo is > 0) {
+            _logger.LogWarning(
+                "Mode démonstration actif : le job quotidien tourne toutes les {Intervalle} minutes " +
+                "(JobQuotidien:IntervalleMinutesDemo) au lieu de minuit. Ne jamais activer en production.",
+                intervalleMinutesDemo.Value);
+        }
+
         if (!stoppingToken.IsCancellationRequested)
             await ExecuterAsync();
 
         while (!stoppingToken.IsCancellationRequested) {
-            var maintenant = DateTime.Now;
-            var prochainMinuit = maintenant.Date.AddDays(1);
-
             try {
-                await Task.Delay(prochainMinuit - maintenant, stoppingToken);
+                await Task.Delay(ProchainDelai(), stoppingToken);
             } catch (TaskCanceledException) {
                 break; // arrêt de l'application pendant l'attente
             }
@@ -52,6 +57,24 @@ public class JobQuotidienHostedService : BackgroundService {
 
             await ExecuterAsync();
         }
+    }
+
+    // ENF-009 : exécution à heure fixe (minuit) par défaut — comportement de production inchangé,
+    // qu'appsettings.json ne définisse pas la clé ci-dessous ou que sa valeur soit absente/invalide.
+    // Override optionnel pour une démonstration en direct : si "JobQuotidien:IntervalleMinutesDemo"
+    // est présente et strictement positive (typiquement dans appsettings.Development.json, jamais
+    // en production), le job s'exécute toutes les X minutes au lieu d'attendre minuit. Reste
+    // strictement automatique (aucun endpoint, ENF-011) et idempotent exactement comme aujourd'hui
+    // (JobService) : une exécution rapprochée ne rebascule ni ne pénalise deux fois le même match.
+    // Le rattrapage au démarrage (ExecuteAsync, ligne ci-dessus) n'est pas concerné par cette clé.
+    private TimeSpan ProchainDelai() {
+        var intervalleMinutesDemo = _configuration.GetValue<int?>("JobQuotidien:IntervalleMinutesDemo");
+        if (intervalleMinutesDemo is > 0)
+            return TimeSpan.FromMinutes(intervalleMinutesDemo.Value);
+
+        var maintenant = DateTime.Now;
+        var prochainMinuit = maintenant.Date.AddDays(1);
+        return prochainMinuit - maintenant;
     }
 
     private async Task ExecuterAsync() {

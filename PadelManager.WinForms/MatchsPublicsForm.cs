@@ -3,8 +3,9 @@ using PadelManager.WinForms.Services;
 namespace PadelManager.WinForms
 {
     // Consultation des matchs publics (EF-bk-005) et inscription + paiement immédiat d'une
-    // place libre (EF-bk-006/007). Le filtrage par portée/délai (site pour un membre Site, 5
-    // jours pour un membre Libre, aucun pour un membre Global) est fait côté serveur
+    // place libre (EF-bk-006/007). Le filtrage par portée (site pour un membre Site, aucun pour
+    // un membre Libre ou Global — R-VAL-003, CDC v0.11 : le délai ne borne que la création,
+    // jamais la consultation/l'inscription) est fait côté serveur
     // (MatchService.ObtenirMatchsPublicsAsync) : cet écran ne fait qu'afficher ce qu'on lui donne.
     public partial class MatchsPublicsForm : Form {
 

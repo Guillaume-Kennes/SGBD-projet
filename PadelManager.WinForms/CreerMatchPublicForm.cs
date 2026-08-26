@@ -5,8 +5,8 @@ namespace PadelManager.WinForms
     // Création directe d'un match public (EF-bk-002) : identique à CreerMatchForm (recherche des
     // créneaux réellement libres par terrain, création + paiement immédiat de la part de
     // l'organisateur) sauf qu'aucun joueur n'est ajouté (R-ACC-005) — les 3 places restantes
-    // seront ouvertes à l'inscription individuelle sur la liste des matchs publics (EF-bk-006, à
-    // faire plus tard).
+    // sont ouvertes à l'inscription individuelle sur la liste des matchs publics (EF-bk-006,
+    // cf. MatchsPublicsForm).
     public partial class CreerMatchPublicForm : Form {
 
         private readonly ApiClient _apiClient = new();

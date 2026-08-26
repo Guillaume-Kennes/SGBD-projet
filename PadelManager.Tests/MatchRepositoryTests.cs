@@ -89,7 +89,7 @@ public class MatchRepositoryTests {
     // le provider InMemory n'enforce pas UQ_MATCH_terrain_creneau (vérifié empiriquement, aucune
     // exception levée sur un doublon), contrairement à SQL Server. La traduction elle-même est
     // couverte au niveau service (MatchServiceTests, avec le repository mocké) ; le vrai conflit
-    // DB est vérifié manuellement via un test HTTP contre SQL Server (cf. plan de vérification).
+    // DB est couvert par MatchRepositorySqlServerTests (vraie base, pas InMemory).
 
     [Fact]
     public async Task GetByIdAsync_MatchExistant_RetourneLeMatch() {
@@ -189,10 +189,11 @@ public class MatchRepositoryTests {
         Assert.Null(resultat);
     }
 
-    // Pas de test InMemory pour PayerParticipationAsync : comme InscrireEtPayerAsync, il commence
-    // par un SELECT ... WITH (UPDLOCK, HOLDLOCK) (FromSqlInterpolated), non supporté par le
-    // provider InMemory (relationnel uniquement). Couvert par MatchServiceTests (repository
-    // mocké) et vérifié en HTTP réel contre SQL Server.
+    // Pas de test InMemory pour PayerParticipationAsync (ni pour InscrireEtPayerAsync, ni pour
+    // VerrouillerMatchAsync) : ces méthodes commencent par un SELECT ... WITH (UPDLOCK, HOLDLOCK)
+    // (FromSqlInterpolated), non supporté par le provider InMemory (relationnel uniquement).
+    // Couvert par MatchServiceTests (repository mocké) pour la logique métier, et par
+    // MatchRepositorySqlServerTests (vraie base) pour le comportement réel de ces méthodes.
 
     [Fact]
     public async Task GetParticipationsEnAttenteAsync_NeRetourneQueLesParticipationsNonPayeesDuMembre() {

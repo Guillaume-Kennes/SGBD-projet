@@ -8,9 +8,11 @@ namespace PadelManager.Api.Controllers;
 [Route("api/matchs")]
 public class MatchController : ControllerBase {
     private readonly IMatchService _matchService;
+    private readonly IAdminPorteeService _adminPorteeService;
 
-    public MatchController(IMatchService matchService) {
+    public MatchController(IMatchService matchService, IAdminPorteeService adminPorteeService) {
         _matchService = matchService;
+        _adminPorteeService = adminPorteeService;
     }
 
     // Route absolue (comme JourFermetureController) : la consultation des créneaux réellement
@@ -108,17 +110,24 @@ public class MatchController : ControllerBase {
     }
 
     // Vue administrateur (EF-bk-014) : siteId omis -> tous les sites (admin Global), fourni ->
-    // filtré à ce site (admin de Site). Comme les autres écrans admin de ce projet, la portée
-    // Global/Site elle-même n'est pas vérifiée côté API (cf. AdminMenuForm côté WinForms).
+    // filtré à ce site (admin de Site). Portée vérifiée côté serveur (issue #13).
     [HttpGet("etat")]
-    public async Task<IActionResult> ObtenirEtat([FromQuery] int? siteId) {
+    public async Task<IActionResult> ObtenirEtat([FromQuery] int? siteId, [FromQuery] string adminMatricule) {
+        var portee = await _adminPorteeService.VerifierPorteeSiteAsync(adminMatricule, siteId);
+        if (!portee.Autorise)
+            return StatusCode(403, new { message = portee.MessageErreur });
+
         var matchs = await _matchService.ObtenirEtatMatchsAsync(siteId);
         return Ok(matchs);
     }
 
     // Récapitulatif des terrains (EF-bk-014, "matchs et terrains"), même convention de portée.
     [HttpGet("terrains")]
-    public async Task<IActionResult> ObtenirRecapitulatifTerrains([FromQuery] int? siteId) {
+    public async Task<IActionResult> ObtenirRecapitulatifTerrains([FromQuery] int? siteId, [FromQuery] string adminMatricule) {
+        var portee = await _adminPorteeService.VerifierPorteeSiteAsync(adminMatricule, siteId);
+        if (!portee.Autorise)
+            return StatusCode(403, new { message = portee.MessageErreur });
+
         var recap = await _matchService.ObtenirRecapitulatifTerrainsAsync(siteId);
         return Ok(recap);
     }

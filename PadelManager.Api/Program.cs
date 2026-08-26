@@ -20,6 +20,7 @@ builder.Services.AddDbContext<PadelManagerDbContext>(options =>
 builder.Services.AddScoped<IMembreRepository, MembreRepository>();
 builder.Services.AddScoped<IAdministrateurRepository, AdministrateurRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IAdminPorteeService, AdminPorteeService>();
 
 builder.Services.AddScoped<ISiteRepository, SiteRepository>();
 builder.Services.AddScoped<IHoraireSiteRepository, HoraireSiteRepository>();

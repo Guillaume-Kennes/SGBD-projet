@@ -23,6 +23,11 @@ public class JourFermetureService : IJourFermetureService {
         return fermetures.Select(VersDto).ToList();
     }
 
+    public async Task<JourFermetureDto?> ObtenirParIdAsync(int id) {
+        var jour = await _jourFermetureRepository.GetByIdAsync(id);
+        return jour == null ? null : VersDto(jour);
+    }
+
     public async Task<DeclarerFermetureResultatDto> DeclarerAsync(JourFermetureRequestDto requete) {
         var erreur = await ValiderAsync(requete);
         if (erreur != null) {

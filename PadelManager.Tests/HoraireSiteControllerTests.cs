@@ -9,11 +9,15 @@ namespace PadelManager.Tests;
 
 public class HoraireSiteControllerTests {
     private readonly Mock<IHoraireSiteService> _horaireServiceMock;
+    private readonly Mock<IAdminPorteeService> _adminPorteeServiceMock;
     private readonly HoraireSiteController _controller;
 
     public HoraireSiteControllerTests() {
         _horaireServiceMock = new Mock<IHoraireSiteService>();
-        _controller = new HoraireSiteController(_horaireServiceMock.Object);
+        _adminPorteeServiceMock = new Mock<IAdminPorteeService>();
+        _adminPorteeServiceMock.Setup(s => s.VerifierPorteeSiteAsync(It.IsAny<string>(), It.IsAny<int?>()))
+            .ReturnsAsync(new PorteeAdminResultatDto { Autorise = true });
+        _controller = new HoraireSiteController(_horaireServiceMock.Object, _adminPorteeServiceMock.Object);
     }
 
     [Fact]
@@ -23,7 +27,7 @@ public class HoraireSiteControllerTests {
         _horaireServiceMock.Setup(s => s.ObtenirHoraireAsync(1, 2026)).ReturnsAsync(dto);
 
         // Act
-        var resultat = await _controller.Obtenir(1, 2026);
+        var resultat = await _controller.Obtenir(1, 2026, "G001");
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(resultat);
@@ -36,16 +40,32 @@ public class HoraireSiteControllerTests {
         _horaireServiceMock.Setup(s => s.ObtenirHoraireAsync(1, 2026)).ReturnsAsync((HoraireSiteDto?)null);
 
         // Act
-        var resultat = await _controller.Obtenir(1, 2026);
+        var resultat = await _controller.Obtenir(1, 2026, "G001");
 
         // Assert
         Assert.IsType<NotFoundObjectResult>(resultat);
     }
 
     [Fact]
+    public async Task Obtenir_PorteeRefusee_RetourneForbidden() {
+        // Arrange
+        _adminPorteeServiceMock.Setup(s => s.VerifierPorteeSiteAsync("S002", 1))
+            .ReturnsAsync(new PorteeAdminResultatDto { Autorise = false, MessageErreur = "Cet administrateur n'est pas autorisé pour ce site." });
+
+        // Act
+        var resultat = await _controller.Obtenir(1, 2026, "S002");
+
+        // Assert
+        var objectResult = Assert.IsType<ObjectResult>(resultat);
+        Assert.Equal(403, objectResult.StatusCode);
+        _horaireServiceMock.Verify(s => s.ObtenirHoraireAsync(It.IsAny<int>(), It.IsAny<short>()), Times.Never);
+    }
+
+    [Fact]
     public async Task Definir_RequeteValide_RetourneOk() {
         // Arrange
         var requete = new HoraireSiteRequestDto {
+            AdminMatricule = "G001",
             JoursOuverture = new List<string> { "LUN" },
             HeureDebutReservation = new TimeOnly(9, 0),
             HeureFinReservation = new TimeOnly(21, 0)
@@ -65,7 +85,7 @@ public class HoraireSiteControllerTests {
     [Fact]
     public async Task Definir_RequeteInvalide_RetourneBadRequest() {
         // Arrange
-        var requete = new HoraireSiteRequestDto();
+        var requete = new HoraireSiteRequestDto { AdminMatricule = "G001" };
         _horaireServiceMock.Setup(s => s.DefinirHoraireAsync(1, 2026, requete))
             .ReturnsAsync(new DefinirHoraireResultatDto { Succes = false, MessageErreur = "Veuillez sélectionner au moins un jour d'ouverture." });
 
@@ -74,5 +94,21 @@ public class HoraireSiteControllerTests {
 
         // Assert
         Assert.IsType<BadRequestObjectResult>(resultat);
+    }
+
+    [Fact]
+    public async Task Definir_PorteeRefusee_RetourneForbidden() {
+        // Arrange : un admin de site tente d'écrire sur un autre site.
+        var requete = new HoraireSiteRequestDto { AdminMatricule = "S002" };
+        _adminPorteeServiceMock.Setup(s => s.VerifierPorteeSiteAsync("S002", 1))
+            .ReturnsAsync(new PorteeAdminResultatDto { Autorise = false, MessageErreur = "Cet administrateur n'est pas autorisé pour ce site." });
+
+        // Act
+        var resultat = await _controller.Definir(1, 2026, requete);
+
+        // Assert
+        var objectResult = Assert.IsType<ObjectResult>(resultat);
+        Assert.Equal(403, objectResult.StatusCode);
+        _horaireServiceMock.Verify(s => s.DefinirHoraireAsync(It.IsAny<int>(), It.IsAny<short>(), It.IsAny<HoraireSiteRequestDto>()), Times.Never);
     }
 }

@@ -64,7 +64,7 @@ namespace PadelManager.WinForms.Admin
             lblMessage.Text = "Chargement en cours...";
 
             try {
-                var matchs = await _apiClient.ObtenirEtatMatchsAsync(siteId);
+                var matchs = await _apiClient.ObtenirEtatMatchsAsync(siteId, _connexion.Matricule);
                 if (matchs == null) {
                     lblMessage.Text = "Impossible de contacter le serveur. Vérifiez que l'API est lancée.";
                     grdMatchs.DataSource = null;
@@ -77,7 +77,7 @@ namespace PadelManager.WinForms.Admin
                     ? "Aucun match pour ce périmètre."
                     : $"{matchs.Count} match(s).";
 
-                var recapTerrains = await _apiClient.ObtenirRecapitulatifTerrainsAsync(siteId);
+                var recapTerrains = await _apiClient.ObtenirRecapitulatifTerrainsAsync(siteId, _connexion.Matricule);
                 lblTerrains.Text = recapTerrains == null ? "" : FormatterRecapTerrains(recapTerrains, siteId == null);
             } catch (HttpRequestException) {
                 lblMessage.Text = "Impossible de contacter le serveur. Vérifiez que l'API est lancée.";

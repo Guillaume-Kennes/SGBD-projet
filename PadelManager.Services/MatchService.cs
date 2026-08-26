@@ -313,13 +313,7 @@ public class MatchService : IMatchService {
     }
 
     public async Task<List<TerrainRecapDto>> ObtenirRecapitulatifTerrainsAsync(int? siteId) {
-        List<Site> sites;
-        if (siteId.HasValue) {
-            var site = await _siteRepository.GetByIdAsync(siteId.Value);
-            sites = site != null ? new List<Site> { site } : new List<Site>();
-        } else {
-            sites = await _siteRepository.GetAllAsync();
-        }
+        var sites = await _siteRepository.ObtenirSitesConcernesAsync(siteId);
 
         var recap = new List<TerrainRecapDto>();
         foreach (var site in sites) {
