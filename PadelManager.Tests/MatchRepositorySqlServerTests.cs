@@ -24,6 +24,11 @@ namespace PadelManager.Tests;
 // Chaque test crée son propre MATCH (site 1 / terrain 11, données de référence réelles jamais
 // modifiées par ces tests) à une date éloignée dans le futur (2099+) pour ne jamais entrer en
 // collision avec les données seedées (toutes en 2026) ni avec un autre test de cette classe.
+//
+// [Trait("Category", "RequiresSqlServer")] : exclu de la CI GitHub Actions (pas d'accès à SQL
+// Server ni aux deux variables d'environnement ci-dessus là-bas), cf. .github/workflows/main.yml
+// qui filtre sur "Category!=RequiresSqlServer". Ces tests ne tournent qu'en local.
+[Trait("Category", "RequiresSqlServer")]
 public class MatchRepositorySqlServerTests : IAsyncLifetime {
     private const string VarConnexion = "PADEL_TEST_SQLSERVER_CONNECTION";
     private const string VarConnexionNettoyage = "PADEL_TEST_SQLSERVER_CLEANUP_CONNECTION";

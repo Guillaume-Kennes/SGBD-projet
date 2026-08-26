@@ -93,9 +93,14 @@ jobs:
         run: |
           mkdir -p TestResults
 
+          # Category=RequiresSqlServer exclu : ces tests (MatchRepositorySqlServerTests) tournent
+          # contre une vraie instance SQL Server via des variables d'environnement non disponibles
+          # ici (PADEL_TEST_SQLSERVER_CONNECTION / PADEL_TEST_SQLSERVER_CLEANUP_CONNECTION) —
+          # local uniquement.
           dotnet test ./PadelManager.Tests/PadelManager.Tests.csproj \
             --configuration Release \
             --no-build \
+            --filter "Category!=RequiresSqlServer" \
             --logger "trx;LogFileName=test_results.trx" \
             --results-directory ./TestResults \
             --collect:"XPlat Code Coverage"
