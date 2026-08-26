@@ -54,7 +54,7 @@ namespace PadelManager.WinForms.Admin
             lblMessage.Text = "Chargement en cours...";
 
             try {
-                var horaire = await _apiClient.ObtenirHoraireAsync(siteId, annee);
+                var horaire = await _apiClient.ObtenirHoraireAsync(siteId, annee, _connexion.Matricule);
                 if (horaire == null) {
                     lblMessage.Text = "Aucun horaire configuré pour ce site et cette année. Vous pouvez en créer un.";
                     return;
@@ -87,6 +87,7 @@ namespace PadelManager.WinForms.Admin
                 .ToList();
 
             var requete = new HoraireSiteRequete {
+                AdminMatricule = _connexion.Matricule,
                 JoursOuverture = joursOuverture,
                 HeureDebutReservation = TimeOnly.FromDateTime(dtpHeureDebut.Value),
                 HeureFinReservation = TimeOnly.FromDateTime(dtpHeureFin.Value)

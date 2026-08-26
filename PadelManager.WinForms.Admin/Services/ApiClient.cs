@@ -24,6 +24,8 @@ public class HoraireSiteResultat {
 }
 
 public class HoraireSiteRequete {
+    // Matricule de l'admin appelant (issue #13, contrôle de portée serveur).
+    public string AdminMatricule { get; set; } = null!;
     public List<string> JoursOuverture { get; set; } = new();
     public TimeOnly HeureDebutReservation { get; set; }
     public TimeOnly HeureFinReservation { get; set; }
@@ -37,6 +39,8 @@ public class JourFermetureResultat {
 
 // SiteId == null -> fermeture ponctuelle globale (tous les sites), réservée à l'admin global.
 public class JourFermetureRequete {
+    // Matricule de l'admin appelant (issue #13, contrôle de portée serveur).
+    public string AdminMatricule { get; set; } = null!;
     public int? SiteId { get; set; }
     public DateOnly Date { get; set; }
 }
@@ -47,6 +51,8 @@ public class FermetureHebdoGlobaleResultat {
 }
 
 public class FermetureHebdoGlobaleRequete {
+    // Matricule de l'admin appelant (issue #13, contrôle de portée serveur).
+    public string AdminMatricule { get; set; } = null!;
     public List<string> JoursFermes { get; set; } = new();
 }
 
@@ -127,8 +133,8 @@ public class ApiClient {
         return await response.Content.ReadFromJsonAsync<List<SiteResultat>>();
     }
 
-    public async Task<HoraireSiteResultat?> ObtenirHoraireAsync(int siteId, int annee) {
-        var response = await _httpClient.GetAsync($"api/sites/{siteId}/horaires/{annee}");
+    public async Task<HoraireSiteResultat?> ObtenirHoraireAsync(int siteId, int annee, string adminMatricule) {
+        var response = await _httpClient.GetAsync($"api/sites/{siteId}/horaires/{annee}?adminMatricule={Uri.EscapeDataString(adminMatricule)}");
 
         if (!response.IsSuccessStatusCode)
             return null;
@@ -148,8 +154,8 @@ public class ApiClient {
         return new ApiResult<HoraireSiteResultat> { Succes = true, Data = horaire };
     }
 
-    public async Task<List<JourFermetureResultat>?> ObtenirFermeturesPonctuellesAsync(int siteId, int annee) {
-        var response = await _httpClient.GetAsync($"api/sites/{siteId}/fermetures-ponctuelles?annee={annee}");
+    public async Task<List<JourFermetureResultat>?> ObtenirFermeturesPonctuellesAsync(int siteId, int annee, string adminMatricule) {
+        var response = await _httpClient.GetAsync($"api/sites/{siteId}/fermetures-ponctuelles?annee={annee}&adminMatricule={Uri.EscapeDataString(adminMatricule)}");
 
         if (!response.IsSuccessStatusCode)
             return null;
@@ -169,13 +175,13 @@ public class ApiClient {
         return new ApiResult<JourFermetureResultat> { Succes = true, Data = fermeture };
     }
 
-    public async Task<bool> SupprimerFermetureAsync(int id) {
-        var response = await _httpClient.DeleteAsync($"api/fermetures-ponctuelles/{id}");
+    public async Task<bool> SupprimerFermetureAsync(int id, string adminMatricule) {
+        var response = await _httpClient.DeleteAsync($"api/fermetures-ponctuelles/{id}?adminMatricule={Uri.EscapeDataString(adminMatricule)}");
         return response.IsSuccessStatusCode;
     }
 
-    public async Task<FermetureHebdoGlobaleResultat?> ObtenirFermetureHebdoGlobaleAsync(int annee) {
-        var response = await _httpClient.GetAsync($"api/fermetures-hebdo-globales/{annee}");
+    public async Task<FermetureHebdoGlobaleResultat?> ObtenirFermetureHebdoGlobaleAsync(int annee, string adminMatricule) {
+        var response = await _httpClient.GetAsync($"api/fermetures-hebdo-globales/{annee}?adminMatricule={Uri.EscapeDataString(adminMatricule)}");
 
         if (!response.IsSuccessStatusCode)
             return null;
@@ -195,13 +201,15 @@ public class ApiClient {
         return new ApiResult<FermetureHebdoGlobaleResultat> { Succes = true, Data = fermeture };
     }
 
-    public async Task<bool> SupprimerFermetureHebdoGlobaleAsync(int annee) {
-        var response = await _httpClient.DeleteAsync($"api/fermetures-hebdo-globales/{annee}");
+    public async Task<bool> SupprimerFermetureHebdoGlobaleAsync(int annee, string adminMatricule) {
+        var response = await _httpClient.DeleteAsync($"api/fermetures-hebdo-globales/{annee}?adminMatricule={Uri.EscapeDataString(adminMatricule)}");
         return response.IsSuccessStatusCode;
     }
 
-    public async Task<List<AdminMatchResultat>?> ObtenirEtatMatchsAsync(int? siteId) {
-        var url = siteId.HasValue ? $"api/matchs/etat?siteId={siteId}" : "api/matchs/etat";
+    public async Task<List<AdminMatchResultat>?> ObtenirEtatMatchsAsync(int? siteId, string adminMatricule) {
+        var url = siteId.HasValue
+            ? $"api/matchs/etat?siteId={siteId}&adminMatricule={Uri.EscapeDataString(adminMatricule)}"
+            : $"api/matchs/etat?adminMatricule={Uri.EscapeDataString(adminMatricule)}";
         var response = await _httpClient.GetAsync(url);
 
         if (!response.IsSuccessStatusCode)
@@ -210,8 +218,10 @@ public class ApiClient {
         return await response.Content.ReadFromJsonAsync<List<AdminMatchResultat>>();
     }
 
-    public async Task<List<TerrainRecapResultat>?> ObtenirRecapitulatifTerrainsAsync(int? siteId) {
-        var url = siteId.HasValue ? $"api/matchs/terrains?siteId={siteId}" : "api/matchs/terrains";
+    public async Task<List<TerrainRecapResultat>?> ObtenirRecapitulatifTerrainsAsync(int? siteId, string adminMatricule) {
+        var url = siteId.HasValue
+            ? $"api/matchs/terrains?siteId={siteId}&adminMatricule={Uri.EscapeDataString(adminMatricule)}"
+            : $"api/matchs/terrains?adminMatricule={Uri.EscapeDataString(adminMatricule)}";
         var response = await _httpClient.GetAsync(url);
 
         if (!response.IsSuccessStatusCode)
@@ -220,8 +230,10 @@ public class ApiClient {
         return await response.Content.ReadFromJsonAsync<List<TerrainRecapResultat>>();
     }
 
-    public async Task<List<ChiffreAffairesResultat>?> ObtenirChiffreAffairesAsync(int? siteId) {
-        var url = siteId.HasValue ? $"api/statistiques/chiffre-affaires?siteId={siteId}" : "api/statistiques/chiffre-affaires";
+    public async Task<List<ChiffreAffairesResultat>?> ObtenirChiffreAffairesAsync(int? siteId, string adminMatricule) {
+        var url = siteId.HasValue
+            ? $"api/statistiques/chiffre-affaires?siteId={siteId}&adminMatricule={Uri.EscapeDataString(adminMatricule)}"
+            : $"api/statistiques/chiffre-affaires?adminMatricule={Uri.EscapeDataString(adminMatricule)}";
         var response = await _httpClient.GetAsync(url);
 
         if (!response.IsSuccessStatusCode)
@@ -230,8 +242,10 @@ public class ApiClient {
         return await response.Content.ReadFromJsonAsync<List<ChiffreAffairesResultat>>();
     }
 
-    public async Task<List<StatistiquesResultat>?> ObtenirStatistiquesAsync(int? siteId) {
-        var url = siteId.HasValue ? $"api/statistiques?siteId={siteId}" : "api/statistiques";
+    public async Task<List<StatistiquesResultat>?> ObtenirStatistiquesAsync(int? siteId, string adminMatricule) {
+        var url = siteId.HasValue
+            ? $"api/statistiques?siteId={siteId}&adminMatricule={Uri.EscapeDataString(adminMatricule)}"
+            : $"api/statistiques?adminMatricule={Uri.EscapeDataString(adminMatricule)}";
         var response = await _httpClient.GetAsync(url);
 
         if (!response.IsSuccessStatusCode)
@@ -240,8 +254,10 @@ public class ApiClient {
         return await response.Content.ReadFromJsonAsync<List<StatistiquesResultat>>();
     }
 
-    public async Task<List<MembreAdminResultat>?> ObtenirMembresAsync(int? siteId) {
-        var url = siteId.HasValue ? $"api/membres?siteId={siteId}" : "api/membres";
+    public async Task<List<MembreAdminResultat>?> ObtenirMembresAsync(int? siteId, string adminMatricule) {
+        var url = siteId.HasValue
+            ? $"api/membres?siteId={siteId}&adminMatricule={Uri.EscapeDataString(adminMatricule)}"
+            : $"api/membres?adminMatricule={Uri.EscapeDataString(adminMatricule)}";
         var response = await _httpClient.GetAsync(url);
 
         if (!response.IsSuccessStatusCode)

@@ -34,7 +34,7 @@ namespace PadelManager.WinForms.Admin
         }
 
         private void btnFermetureHebdoGlobale_Click(object sender, EventArgs e) {
-            using var form = new FermetureHebdoGlobaleForm();
+            using var form = new FermetureHebdoGlobaleForm(_connexion);
             form.ShowDialog();
         }
 

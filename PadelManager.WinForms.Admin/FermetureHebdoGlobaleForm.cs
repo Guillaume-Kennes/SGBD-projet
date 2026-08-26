@@ -9,11 +9,13 @@ namespace PadelManager.WinForms.Admin
     public partial class FermetureHebdoGlobaleForm : Form {
 
         private readonly ApiClient _apiClient = new();
+        private readonly ConnexionResultat _connexion;
 
         private readonly Dictionary<string, CheckBox> _checkBoxParJour;
 
-        public FermetureHebdoGlobaleForm() {
+        public FermetureHebdoGlobaleForm(ConnexionResultat connexion) {
             InitializeComponent();
+            _connexion = connexion;
 
             _checkBoxParJour = new Dictionary<string, CheckBox> {
                 ["LUN"] = chkLun,
@@ -35,7 +37,7 @@ namespace PadelManager.WinForms.Admin
                 checkBox.Checked = false;
 
             try {
-                var fermeture = await _apiClient.ObtenirFermetureHebdoGlobaleAsync(annee);
+                var fermeture = await _apiClient.ObtenirFermetureHebdoGlobaleAsync(annee, _connexion.Matricule);
                 if (fermeture == null) {
                     lblMessage.Text = "Aucun jour fermé globalement pour cette année.";
                     return;
@@ -63,7 +65,7 @@ namespace PadelManager.WinForms.Admin
                 return;
             }
 
-            var requete = new FermetureHebdoGlobaleRequete { JoursFermes = joursFermes };
+            var requete = new FermetureHebdoGlobaleRequete { AdminMatricule = _connexion.Matricule, JoursFermes = joursFermes };
 
             btnEnregistrer.Enabled = false;
             lblMessage.Text = "Enregistrement en cours...";
@@ -96,7 +98,7 @@ namespace PadelManager.WinForms.Admin
             lblMessage.Text = "Suppression en cours...";
 
             try {
-                var succes = await _apiClient.SupprimerFermetureHebdoGlobaleAsync(annee);
+                var succes = await _apiClient.SupprimerFermetureHebdoGlobaleAsync(annee, _connexion.Matricule);
 
                 if (succes) {
                     foreach (var checkBox in _checkBoxParJour.Values)

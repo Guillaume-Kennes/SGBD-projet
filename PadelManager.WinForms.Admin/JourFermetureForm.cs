@@ -48,7 +48,7 @@ namespace PadelManager.WinForms.Admin
             lblMessage.Text = "Chargement en cours...";
 
             try {
-                var fermetures = await _apiClient.ObtenirFermeturesPonctuellesAsync(siteId, annee);
+                var fermetures = await _apiClient.ObtenirFermeturesPonctuellesAsync(siteId, annee, _connexion.Matricule);
                 if (fermetures == null) {
                     lblMessage.Text = "Impossible de contacter le serveur. Vérifiez que l'API est lancée.";
                     return;
@@ -74,6 +74,7 @@ namespace PadelManager.WinForms.Admin
             }
 
             var requete = new JourFermetureRequete {
+                AdminMatricule = _connexion.Matricule,
                 SiteId = chkTousLesSites.Checked ? null : (int)cboSite.SelectedValue!,
                 Date = DateOnly.FromDateTime(dtpDate.Value)
             };
@@ -116,7 +117,7 @@ namespace PadelManager.WinForms.Admin
             lblMessage.Text = "Annulation en cours...";
 
             try {
-                var succes = await _apiClient.SupprimerFermetureAsync(fermeture.Id);
+                var succes = await _apiClient.SupprimerFermetureAsync(fermeture.Id, _connexion.Matricule);
 
                 lblMessage.Text = succes
                     ? "Fermeture annulée et disponibilités régénérées."

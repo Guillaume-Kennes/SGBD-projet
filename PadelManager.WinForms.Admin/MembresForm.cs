@@ -58,7 +58,7 @@ namespace PadelManager.WinForms.Admin
             lblMessage.Text = "Chargement en cours...";
 
             try {
-                var membres = await _apiClient.ObtenirMembresAsync(siteId);
+                var membres = await _apiClient.ObtenirMembresAsync(siteId, _connexion.Matricule);
                 if (membres == null) {
                     lblMessage.Text = "Impossible de contacter le serveur. Vérifiez que l'API est lancée.";
                     grdMembres.DataSource = null;
