@@ -33,6 +33,7 @@ namespace PadelManager.WinForms
             btnMatchsPublics = new Button();
             btnParticipationsEnAttente = new Button();
             btnReservations = new Button();
+            btnDeconnexion = new Button();
             SuspendLayout();
             //
             // lblConnecte
@@ -93,11 +94,22 @@ namespace PadelManager.WinForms
             btnReservations.UseVisualStyleBackColor = true;
             btnReservations.Click += btnReservations_Click;
             //
+            // btnDeconnexion
+            //
+            btnDeconnexion.Location = new Point(20, 305);
+            btnDeconnexion.Name = "btnDeconnexion";
+            btnDeconnexion.Size = new Size(280, 34);
+            btnDeconnexion.TabIndex = 6;
+            btnDeconnexion.Text = "Se déconnecter";
+            btnDeconnexion.UseVisualStyleBackColor = true;
+            btnDeconnexion.Click += btnDeconnexion_Click;
+            //
             // MembreMenuForm
             //
             AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(340, 310);
+            ClientSize = new Size(340, 360);
+            Controls.Add(btnDeconnexion);
             Controls.Add(btnReservations);
             Controls.Add(btnParticipationsEnAttente);
             Controls.Add(btnMatchsPublics);
@@ -118,5 +130,6 @@ namespace PadelManager.WinForms
         private Button btnMatchsPublics;
         private Button btnParticipationsEnAttente;
         private Button btnReservations;
+        private Button btnDeconnexion;
     }
 }
